@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#134e5e"/>
+      <stop offset="100%" stop-color="#4ca1af"/>
+    </linearGradient>
+  </defs>
+  <rect width="200" height="200" fill="url(#g)"/>
+  
+        <circle cx="170.0" cy="30.0" r="44.0" fill="rgba(255,255,255,.10)"/>
+        <circle cx="16.0" cy="184.0" r="56.00000000000001" fill="rgba(255,255,255,.08)"/>
+        <circle cx="100.0" cy="100.0" r="110.00000000000001" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="1.5"/>
+        
+  <text x="50%" y="110.00000000000001" text-anchor="middle" font-family="Arial, sans-serif" font-size="44">🌏</text>
+  <text x="50%" y="160.0" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#ffffff" letter-spacing="1"></text>
+</svg>

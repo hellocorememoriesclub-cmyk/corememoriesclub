@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f2994a"/>
+      <stop offset="100%" stop-color="#f2c94c"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="500" fill="url(#g)"/>
+  
+        <circle cx="680.0" cy="75.0" r="110.0" fill="rgba(255,255,255,.10)"/>
+        <circle cx="64.0" cy="460.0" r="140.0" fill="rgba(255,255,255,.08)"/>
+        <circle cx="400.0" cy="250.0" r="275.0" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="1.5"/>
+        
+  <text x="50%" y="275.0" text-anchor="middle" font-family="Arial, sans-serif" font-size="110">🏖️</text>
+  <text x="50%" y="400.0" text-anchor="middle" font-family="Arial, sans-serif" font-size="60" font-weight="700" fill="#ffffff" letter-spacing="1">GOA BEACH GETAWAY</text>
+</svg>
