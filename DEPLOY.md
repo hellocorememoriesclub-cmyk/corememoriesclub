@@ -25,7 +25,7 @@ to start.
 ## 3. Initialize the project
 
 ```bash
-cd /Users/apple/corememoriesclub-clone
+cd /Users/apple/Documents/GitHub/corememoriesclub
 railway init
 ```
 
@@ -62,8 +62,8 @@ your own with `python3 -c "import secrets; print(secrets.token_urlsafe(24))"`.)
 railway up
 ```
 
-This uploads the project and builds it (installs Pillow from `requirements.txt`,
-then runs `python3 server.py` per the `Procfile`).
+This uploads the project and builds it per `railway.json` (installs Pillow from
+`railway-backend/requirements.txt`, then runs `railway-backend/server.py`).
 
 ## 7. Get your public URL
 

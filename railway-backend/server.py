@@ -13,7 +13,7 @@ import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 
-ROOT = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.environ.get("DATA_DIR", ROOT)
 DB_PATH = os.path.join(DATA_DIR, "bookings.db")
 PHOTOS_DIR = os.path.join(DATA_DIR, "images", "photos")
