@@ -1,0 +1,54 @@
+{
+  "upcoming": [
+    {
+      "image": "images/photos/ibiza-party.jpg",
+      "alt": "Ibiza Closing Fiesta",
+      "badge": "Bestseller",
+      "days": "6 Days / 5 Nights",
+      "title": "Ibiza Closing Fiesta 2026",
+      "dates": "Oct 04, 2026",
+      "price": "₹1,45,000",
+      "link": "ibiza-closing-fiesta.html"
+    },
+    {
+      "image": "images/photos/mainpage/img_0099.jpg",
+      "alt": "Tomorrowland Belgium",
+      "badge": "Sold Out",
+      "days": "7 Days / 6 Nights",
+      "title": "Tomorrowland Belgium 2026",
+      "dates": "Jul 17, Jul 24 · +1 batch",
+      "price": "₹2,45,000",
+      "link": "tomorrowland-belgium.html"
+    },
+    {
+      "image": "images/photos/zurich-buildings.jpg",
+      "alt": "Zurich New Year Escape",
+      "badge": "New",
+      "days": "5 Days / 4 Nights",
+      "title": "Zurich New Year Escape",
+      "dates": "Dec 28, 2026",
+      "price": "₹1,35,000",
+      "link": "zurich-new-year.html"
+    }
+  ],
+  "previous": [
+    {
+      "image": "images/photos/newzealand/img_6990.jpg",
+      "alt": "New Zealand group trip",
+      "title": "New Zealand Group Trip",
+      "date": "September 2026"
+    },
+    {
+      "image": "images/photos/mexico/img_6828.jpg",
+      "alt": "Mexico group trip",
+      "title": "Mexico Group Trip",
+      "date": "August 2026"
+    },
+    {
+      "image": "images/photos/mainpage/img_0123.jpg",
+      "alt": "Egypt pyramids trip",
+      "title": "Egypt Trip",
+      "date": "June 2026"
+    }
+  ]
+}
