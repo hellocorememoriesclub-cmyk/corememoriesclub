@@ -1,16 +1,6 @@
 {
   "upcoming": [
     {
-      "image": "images/photos/ibiza-party.jpg",
-      "alt": "Ibiza Closing Fiesta",
-      "badge": "Bestseller",
-      "days": "6 Days / 5 Nights",
-      "title": "Ibiza Closing Fiesta 2026",
-      "dates": "Oct 04, 2026",
-      "price": "₹1,45,000",
-      "link": "ibiza-closing-fiesta.html"
-    },
-    {
       "image": "images/photos/mainpage/img_0099.jpg",
       "alt": "Tomorrowland Belgium",
       "badge": "Sold Out",
@@ -26,19 +16,19 @@
       "image": "images/photos/newzealand/img_6990.jpg",
       "alt": "New Zealand group trip",
       "title": "New Zealand Group Trip",
-      "date": "September 2026"
+      "date": ""
     },
     {
       "image": "images/photos/mexico/img_6828.jpg",
       "alt": "Mexico group trip",
       "title": "Mexico Group Trip",
-      "date": "August 2026"
+      "date": ""
     },
     {
       "image": "images/photos/mainpage/img_0123.jpg",
       "alt": "Egypt pyramids trip",
       "title": "Egypt Trip",
-      "date": "June 2026"
+      "date": ""
     }
   ]
 }
