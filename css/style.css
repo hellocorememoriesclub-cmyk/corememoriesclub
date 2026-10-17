@@ -150,11 +150,18 @@ nav.main-nav a:hover{color:var(--accent)}
   overflow:hidden;color:#fff;
 }
 .hero::before{
-  content:"";position:absolute;inset:0;
-  background-image:
+  content:"";position:absolute;inset:0;z-index:1;
+  background:
+    linear-gradient(100deg, rgba(21,11,48,.94) 0%, rgba(21,11,48,.78) 42%, rgba(21,11,48,.4) 75%),
+    radial-gradient(120% 90% at 20% 0%, rgba(236,72,153,.32), transparent 60%),
+    radial-gradient(90% 70% at 95% 100%, rgba(20,184,166,.28), transparent 55%),
     radial-gradient(circle at 15% 25%, rgba(255,255,255,.05) 0, transparent 3%),
     radial-gradient(circle at 85% 15%, rgba(255,255,255,.05) 0, transparent 3%),
     radial-gradient(circle at 60% 80%, rgba(255,255,255,.04) 0, transparent 4%);
+}
+.hero-video{
+  position:absolute;inset:0;width:100%;height:100%;
+  object-fit:cover;object-position:center 30%;z-index:0;
 }
 .hero-inner{position:relative;z-index:2;padding:90px 24px 70px;max-width:var(--maxw);margin:0 auto;width:100%}
 .hero-badge{
