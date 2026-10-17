@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin | Core Memories Club</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌍</text></svg>">
-<link rel="stylesheet" href="css/style.css?v=26">
+<link rel="stylesheet" href="css/style.css?v=27">
 <style>
   body{background:var(--bg-light);min-height:100vh}
   .admin-shell{display:flex;min-height:100vh}
@@ -87,11 +87,15 @@
   .chat-input-row input{flex:1;padding:10px 14px;border-radius:999px;border:1.5px solid var(--border);font-size:13.5px}
   .chat-input-row button{padding:10px 20px;border-radius:999px;background:var(--brand-gradient);color:#fff;font-weight:700;font-size:13px}
 
-  .trip-edit-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:24px}
-  .trip-edit-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+  .trip-edit-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:12px}
+  .trip-edit-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:16px;position:relative}
   .trip-edit-card label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted-2);margin-top:10px;margin-bottom:4px}
   .trip-edit-card label:first-child{margin-top:0}
   .trip-edit-card input{width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit}
+  .trip-delete-btn{position:absolute;top:10px;right:10px;width:26px;height:26px;border-radius:50%;background:#fee2e2;color:#dc2626;border:none;font-size:18px;line-height:1;font-weight:700;cursor:pointer}
+  .trip-delete-btn:hover{background:#fecaca}
+  .add-trip-btn{padding:9px 18px;border-radius:999px;background:#fff;border:1.5px dashed var(--border);color:var(--text-muted-2);font-weight:700;font-size:13px;margin-bottom:24px;cursor:pointer}
+  .add-trip-btn:hover{border-color:var(--text-muted-2);color:var(--text)}
   .save-trips-btn{padding:12px 28px;border-radius:999px;background:var(--brand-gradient);color:#fff;font-weight:700;font-size:14px}
   .trips-save-msg{margin-left:14px;font-size:13px;font-weight:600}
 </style>
@@ -424,7 +428,15 @@ function renderTripEditCard(trip, idx, group, fields) {
     <label>${escapeHtml(label)}</label>
     <input type="text" data-group="${group}" data-idx="${idx}" data-key="${key}" value="${escapeHtml(trip[key] || '')}">
   `).join('');
-  return `<div class="trip-edit-card">${inputs}</div>`;
+  return `<div class="trip-edit-card"><button type="button" class="trip-delete-btn" title="Delete this trip">&times;</button>${inputs}</div>`;
+}
+
+function addTripCard(group) {
+  const grid = document.getElementById(group === 'upcoming' ? 'upcomingGrid' : 'previousGrid');
+  const fields = group === 'upcoming' ? upcomingFieldDef() : previousFieldDef();
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = renderTripEditCard({}, grid.children.length, group, fields);
+  grid.appendChild(wrapper.firstElementChild);
 }
 
 async function loadTripsEditor() {
@@ -439,17 +451,26 @@ async function loadTripsEditor() {
         <div class="trip-edit-grid" id="upcomingGrid">
           ${trips.upcoming.map((t,i) => renderTripEditCard(t, i, 'upcoming', upcomingFieldDef())).join('')}
         </div>
+        <button type="button" class="add-trip-btn" id="addUpcomingBtn">+ Add Upcoming Trip</button>
       </div>
       <div class="panel">
         <h3>Previous Trips (shown on homepage)</h3>
         <div class="trip-edit-grid" id="previousGrid">
           ${trips.previous.map((t,i) => renderTripEditCard(t, i, 'previous', previousFieldDef())).join('')}
         </div>
+        <button type="button" class="add-trip-btn" id="addPreviousBtn">+ Add Previous Trip</button>
       </div>
       <button class="save-trips-btn" id="saveTripsBtn">Save Changes</button>
       <span class="trips-save-msg" id="tripsSaveMsg"></span>
     `;
     document.getElementById('saveTripsBtn').addEventListener('click', saveTrips);
+    document.getElementById('addUpcomingBtn').addEventListener('click', () => addTripCard('upcoming'));
+    document.getElementById('addPreviousBtn').addEventListener('click', () => addTripCard('previous'));
+    el.addEventListener('click', (e) => {
+      if (e.target.classList.contains('trip-delete-btn')) {
+        e.target.closest('.trip-edit-card').remove();
+      }
+    });
   } catch (e) {
     el.innerHTML = '<div class="empty-state">Could not reach the server.</div>';
   }
