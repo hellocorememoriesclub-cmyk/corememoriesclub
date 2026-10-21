@@ -206,39 +206,7 @@ document.querySelectorAll('.nav-item[data-view]').forEach(item => {
 
 async function loadTraffic() {
   const el = document.getElementById('trafficContent');
-  el.innerHTML = '<div class="empty-state">Loading...</div>';
-  try {
-    const res = await fetch('/api/traffic?token=' + encodeURIComponent(token()));
-    const data = await res.json();
-    if (res.status === 401) { el.innerHTML = '<div class="empty-state">Invalid token.</div>'; return; }
-    const r = data.report;
-    const maxDaily = Math.max(...r.daily.map(d => d.count), 1);
-    el.innerHTML = `
-      <div class="stat-grid">
-        <div class="stat-card"><div class="sv">${r.total}</div><div class="sl">Total Page Views</div></div>
-        <div class="stat-card"><div class="sv">${r.last_24h}</div><div class="sl">Last 24 Hours</div></div>
-        <div class="stat-card"><div class="sv">${r.last_7d}</div><div class="sl">Last 7 Days</div></div>
-        <div class="stat-card"><div class="sv">${r.top_pages.length}</div><div class="sl">Pages Tracked</div></div>
-      </div>
-      <div class="panel">
-        <h3>Views — Last 14 Days</h3>
-        <div class="bars">
-          ${r.daily.map(d => `<div class="bar-col"><div class="bar" style="height:${Math.max(4, d.count / maxDaily * 130)}px" title="${d.count}"></div><div class="lbl">${d.day}</div></div>`).join('')}
-        </div>
-      </div>
-      <div class="panel">
-        <h3>Top Pages</h3>
-        <table><thead><tr><th>Page</th><th>Views</th></tr></thead><tbody>
-          ${r.top_pages.map(p => `<tr><td>${escapeHtml(p.path)}</td><td>${p.c}</td></tr>`).join('') || '<tr><td colspan="2" style="color:var(--text-muted-2)">No data yet</td></tr>'}
-        </tbody></table>
-      </div>
-      <div class="panel">
-        <h3>Top Referrers</h3>
-        <table><thead><tr><th>Referrer</th><th>Visits</th></tr></thead><tbody>
-          ${r.top_referrers.map(p => `<tr><td>${escapeHtml(p.referrer)}</td><td>${p.c}</td></tr>`).join('') || '<tr><td colspan="2" style="color:var(--text-muted-2)">No external referrers yet</td></tr>'}
-        </tbody></table>
-      </div>`;
-  } catch (e) { el.innerHTML = '<div class="empty-state">Could not reach the server.</div>'; }
+  el.innerHTML = '<div class="empty-state">📊 Traffic Report isn\'t set up yet — coming soon.</div>';
 }
 
 async function loadBookings() {
@@ -278,42 +246,7 @@ let chatPollTimer = null;
 
 async function loadChatSessions() {
   const el = document.getElementById('chatContent');
-  try {
-    const res = await fetch('/api/chat/sessions?token=' + encodeURIComponent(token()));
-    const data = await res.json();
-    if (res.status === 401) { el.innerHTML = '<div class="empty-state">Invalid token.</div>'; return; }
-    const totalUnread = data.sessions.reduce((a,s) => a + (s.unread||0), 0);
-    const badge = document.getElementById('chatBadge');
-    if (totalUnread > 0) { badge.style.display = 'inline-block'; badge.textContent = totalUnread; } else { badge.style.display = 'none'; }
-
-    if (!el.querySelector('.chat-layout')) {
-      el.innerHTML = `<div class="chat-layout">
-        <div class="chat-sessions" id="chatSessionList"></div>
-        <div class="chat-panel">
-          <div class="chat-messages" id="chatMessages"><div class="empty-state">Select a conversation</div></div>
-          <div class="chat-input-row">
-            <input type="text" id="chatReplyInput" placeholder="Type a reply..." disabled>
-            <button id="chatReplyBtn" disabled>Send</button>
-          </div>
-        </div>
-      </div>`;
-      document.getElementById('chatReplyBtn').addEventListener('click', sendAdminReply);
-      document.getElementById('chatReplyInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendAdminReply(); });
-    }
-    const list = document.getElementById('chatSessionList');
-    if (!data.sessions.length) {
-      list.innerHTML = '<div class="empty-state" style="padding:30px 16px">No conversations yet.</div>';
-      return;
-    }
-    list.innerHTML = data.sessions.map(s => `
-      <div class="chat-session-item ${activeSession===s.session_id?'active':''}" data-session="${s.session_id}">
-        <div class="cs-name"><span>${escapeHtml(s.visitor_name || 'Visitor')}</span>${s.unread ? `<span class="badge" style="background:var(--accent)">${s.unread}</span>` : ''}</div>
-        <div class="cs-msg">${escapeHtml(s.last_message || '')}</div>
-      </div>`).join('');
-    list.querySelectorAll('.chat-session-item').forEach(item => {
-      item.addEventListener('click', () => openChatSession(item.dataset.session));
-    });
-  } catch (e) { el.innerHTML = '<div class="empty-state">Could not reach the server.</div>'; }
+  el.innerHTML = '<div class="empty-state">💬 Live Chat isn\'t set up yet — coming soon.</div>';
 }
 
 function openChatSession(sessionId) {
