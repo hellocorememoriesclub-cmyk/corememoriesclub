@@ -98,6 +98,12 @@
   .add-trip-btn:hover{border-color:var(--text-muted-2);color:var(--text)}
   .save-trips-btn{padding:12px 28px;border-radius:999px;background:var(--brand-gradient);color:#fff;font-weight:700;font-size:14px}
   .trips-save-msg{margin-left:14px;font-size:13px;font-weight:600}
+  .trip-photos-section{margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+  .trip-photo-thumbs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+  .trip-photo-thumb{position:relative;width:56px;height:56px;border-radius:8px;overflow:hidden}
+  .trip-photo-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .trip-photo-del{position:absolute;top:1px;right:1px;width:16px;height:16px;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;font-size:11px;line-height:1;cursor:pointer}
+  .trip-photo-upload-btn{padding:6px 14px;border-radius:999px;background:var(--bg-light);border:1px dashed var(--border);font-size:12px;font-weight:700;color:var(--text-muted-2);cursor:pointer}
 </style>
 </head>
 <body>
@@ -105,7 +111,7 @@
     <div class="admin-sidebar">
       <div class="brand"><span class="mark">🌍</span> CMC Admin</div>
       <a class="nav-item" data-view="overview">📊 Traffic Report</a>
-      <a class="nav-item" data-view="bookings">🧾 Orders &amp; Inquiries</a>
+      <a class="nav-item" data-view="bookings">🧾 Inquiries</a>
       <a class="nav-item" data-view="chat">💬 Live Chat <span class="badge" id="chatBadge" style="display:none">0</span></a>
       <a class="nav-item" data-view="upload">📸 Upload Photos</a>
       <a class="nav-item active" data-view="trips">✈️ Trips Manager</a>
@@ -138,8 +144,18 @@
 
       <div class="view" id="view-upload">
         <div class="panel">
-          <h3>Drop tour photos here</h3>
-          <p style="font-size:13px;color:var(--text-muted-2);margin-bottom:16px">We auto-detect the destination from the photo's GPS data (if present) or its filename, then save it straight into that tour's gallery folder. You can override the detected tour before confirming.</p>
+          <h3>Upload photos to a trip gallery</h3>
+          <p style="font-size:13px;color:var(--text-muted-2);margin-bottom:16px">Pick an existing trip or create a new one, then drop photos — they're saved straight into that trip's gallery and show up on the Gallery page.</p>
+          <div class="form-row" style="margin-bottom:16px">
+            <div class="form-group">
+              <label>Trip</label>
+              <select id="uploadTripSelect"><option value="">Loading trips...</option></select>
+            </div>
+            <div class="form-group" id="newTripNameGroup" style="display:none">
+              <label>New Trip Name</label>
+              <input type="text" id="newTripNameInput" placeholder="e.g. Goa Beach Getaway">
+            </div>
+          </div>
           <div class="drop-zone" id="dropZone">
             <div class="ic">📤</div>
             <div><strong>Drag &amp; drop photos here</strong></div>
@@ -147,6 +163,10 @@
             <input type="file" id="fileInput" multiple accept="image/*" style="display:none">
           </div>
           <div class="upload-results" id="uploadResults"></div>
+        </div>
+        <div class="panel">
+          <h3>This trip's photos</h3>
+          <div class="upload-results" id="existingPhotosGrid"><div class="empty-state">Select a trip to see its photos.</div></div>
         </div>
       </div>
 
@@ -162,8 +182,9 @@ const emailInput = document.getElementById('emailInput');
 tokenInput.value = localStorage.getItem('cmc_admin_token') || '';
 emailInput.value = localStorage.getItem('cmc_admin_email') || '';
 
-const DEST_OPTIONS = ['ibiza','paris','zurich','iceland','tomorrowland','mexico','dubai','vietnam','newzealand','goa','kerala','rishikesh','egypt','hungary','chile','bali','thailand','unsorted'];
-const DEST_LABELS = {ibiza:'Ibiza',paris:'Paris',zurich:'Zurich',iceland:'Iceland',tomorrowland:'Belgium (Tomorrowland)',mexico:'Mexico',dubai:'Dubai',vietnam:'Vietnam',newzealand:'New Zealand',goa:'Goa',kerala:'Kerala',rishikesh:'Rishikesh',egypt:'Egypt',hungary:'Hungary',chile:'Chile',bali:'Bali',thailand:'Thailand',unsorted:'Unsorted'};
+function slugify(s) {
+  return String(s || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'trip';
+}
 
 function token() { return tokenInput.value.trim(); }
 function adminEmail() { return emailInput.value.trim(); }
@@ -178,6 +199,8 @@ document.querySelectorAll('.nav-item[data-view]').forEach(item => {
     document.getElementById('viewTitle').textContent = item.textContent.replace(/\s*\d*$/, '').trim();
     if (item.dataset.view === 'chat') loadChatSessions();
     if (item.dataset.view === 'trips') loadTripsEditor();
+    if (item.dataset.view === 'bookings') loadBookings();
+    if (item.dataset.view === 'upload') loadUploadTab();
   });
 });
 
@@ -222,10 +245,10 @@ async function loadBookings() {
   const el = document.getElementById('bookingsContent');
   el.innerHTML = '<div class="empty-state">Loading...</div>';
   try {
-    const res = await fetch('/api/bookings?token=' + encodeURIComponent(token()));
+    const res = await fetch(`/api/bookings?email=${encodeURIComponent(adminEmail())}&token=${encodeURIComponent(token())}`);
     const data = await res.json();
-    if (res.status === 401) { el.innerHTML = '<div class="empty-state">Invalid token.</div>'; return; }
-    if (!data.bookings.length) { el.innerHTML = '<div class="empty-state">No booking requests yet.</div>'; return; }
+    if (res.status === 401) { el.innerHTML = '<div class="empty-state">Invalid email or token.</div>'; return; }
+    if (!data.bookings.length) { el.innerHTML = '<div class="empty-state">No inquiries yet.</div>'; return; }
     const rows = data.bookings.map(b => {
       const date = new Date(b.created_at * 1000).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
       return `<tr>
@@ -233,7 +256,6 @@ async function loadBookings() {
         <td><a href="tel:${escapeHtml(b.phone)}">${escapeHtml(b.phone)}</a></td>
         <td><a href="mailto:${escapeHtml(b.email)}">${escapeHtml(b.email)}</a></td>
         <td>${escapeHtml(b.destination || '—')}</td><td>${escapeHtml(b.group_size || '—')}</td>
-        <td>${escapeHtml(b.dates || '—')}</td><td>${escapeHtml(b.budget || '—')}</td>
         <td style="max-width:180px">${escapeHtml(b.message || '—')}</td>
         <td><select class="status-select" onchange="updateBookingStatus(${b.id}, this.value)">
           ${['new','contacted','confirmed','closed'].map(s => `<option value="${s}" ${s===b.status?'selected':''}>${s}</option>`).join('')}
@@ -241,12 +263,12 @@ async function loadBookings() {
       </tr>`;
     }).join('');
     el.innerHTML = `<div class="panel" style="padding:0;overflow-x:auto"><table>
-      <thead><tr><th>Received</th><th>Name</th><th>Phone</th><th>Email</th><th>Destination</th><th>Group</th><th>Dates</th><th>Budget</th><th>Message</th><th>Status</th></tr></thead>
+      <thead><tr><th>Received</th><th>Name</th><th>Phone</th><th>Email</th><th>Destination</th><th>Group</th><th>Message</th><th>Status</th></tr></thead>
       <tbody>${rows}</tbody></table></div>`;
   } catch (e) { el.innerHTML = '<div class="empty-state">Could not reach the server.</div>'; }
 }
 async function updateBookingStatus(id, status) {
-  await fetch(`/api/bookings/${id}/status?token=${encodeURIComponent(token())}`, {
+  await fetch(`/api/bookings?action=status&id=${id}&email=${encodeURIComponent(adminEmail())}&token=${encodeURIComponent(token())}`, {
     method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({status}),
   });
 }
@@ -329,6 +351,10 @@ async function sendAdminReply() {
 const dropZone = document.getElementById('dropZone');
 const fileInput = document.getElementById('fileInput');
 const uploadResults = document.getElementById('uploadResults');
+const uploadTripSelect = document.getElementById('uploadTripSelect');
+const newTripNameGroup = document.getElementById('newTripNameGroup');
+const newTripNameInput = document.getElementById('newTripNameInput');
+let galleryData = {};
 
 dropZone.addEventListener('click', () => fileInput.click());
 dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag'); });
@@ -338,9 +364,72 @@ dropZone.addEventListener('drop', e => {
   handleFiles(e.dataTransfer.files);
 });
 fileInput.addEventListener('change', () => handleFiles(fileInput.files));
+uploadTripSelect.addEventListener('change', () => {
+  newTripNameGroup.style.display = uploadTripSelect.value === '__new__' ? 'block' : 'none';
+  renderExistingPhotos();
+});
+
+function currentTripTitle() {
+  if (uploadTripSelect.value === '__new__') return newTripNameInput.value.trim();
+  return uploadTripSelect.value;
+}
+
+async function loadUploadTab() {
+  try {
+    const [tripsRes, galleryRes] = await Promise.all([fetch('/api/trips'), fetch('/api/gallery')]);
+    const trips = await tripsRes.json();
+    galleryData = await galleryRes.json();
+    const names = new Set();
+    [...(trips.upcoming||[]), ...(trips.previous||[])].forEach(t => t.title && names.add(t.title));
+    Object.values(galleryData).forEach(g => g.title && names.add(g.title));
+    uploadTripSelect.innerHTML = [...names].map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('')
+      + '<option value="__new__">+ New Trip</option>';
+    newTripNameGroup.style.display = uploadTripSelect.value === '__new__' ? 'block' : 'none';
+    renderExistingPhotos();
+  } catch (e) {
+    uploadTripSelect.innerHTML = '<option value="__new__">+ New Trip</option>';
+  }
+}
+
+function renderExistingPhotos() {
+  const grid = document.getElementById('existingPhotosGrid');
+  const title = currentTripTitle();
+  if (!title) { grid.innerHTML = '<div class="empty-state">Select a trip to see its photos.</div>'; return; }
+  const slug = slugify(title);
+  const photos = (galleryData[slug] && galleryData[slug].photos) || [];
+  if (!photos.length) { grid.innerHTML = '<div class="empty-state">No photos uploaded for this trip yet.</div>'; return; }
+  grid.innerHTML = photos.map(p => `
+    <div class="upload-card">
+      <img src="/${p}">
+      <div class="uc-body">
+        <button type="button" onclick="deleteGalleryPhoto('${slug}','${p}')" style="color:#e0453f;font-size:12px;font-weight:700">Delete</button>
+      </div>
+    </div>`).join('');
+}
+
+async function deleteGalleryPhoto(slug, path) {
+  if (!confirm('Delete this photo?')) return;
+  try {
+    const res = await fetch('/api/gallery?action=delete-photo', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ email: adminEmail(), token: token(), slug, path }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      galleryData[slug].photos = galleryData[slug].photos.filter(p => p !== path);
+      renderExistingPhotos();
+    } else {
+      alert(data.error || 'Delete failed');
+    }
+  } catch (e) {
+    alert('Network error while deleting photo');
+  }
+}
 
 function handleFiles(fileList) {
-  [...fileList].forEach(uploadFile);
+  const tripTitle = currentTripTitle();
+  if (!tripTitle) { alert('Pick a trip (or create a new one) first.'); return; }
+  [...fileList].forEach(f => uploadFile(f, tripTitle));
 }
 
 function fileToBase64(file) {
@@ -352,64 +441,31 @@ function fileToBase64(file) {
   });
 }
 
-async function uploadFile(file) {
+async function uploadFile(file, tripTitle) {
   const card = document.createElement('div');
   card.className = 'upload-card';
   const previewUrl = URL.createObjectURL(file);
-  card.innerHTML = `<img src="${previewUrl}"><div class="uc-body"><div style="font-size:11px;color:var(--text-muted-2)">Detecting...</div></div>`;
+  card.innerHTML = `<img src="${previewUrl}"><div class="uc-body"><div style="font-size:11px;color:var(--text-muted-2)">Uploading...</div></div>`;
   uploadResults.prepend(card);
 
   const b64 = await fileToBase64(file);
   try {
-    const res = await fetch('/api/upload?token=' + encodeURIComponent(token()), {
+    const res = await fetch('/api/gallery?action=upload', {
       method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({filename: file.name, data: b64}),
+      body: JSON.stringify({ email: adminEmail(), token: token(), tripTitle, filename: file.name, data: b64 }),
     });
     const data = await res.json();
-    if (!res.ok) {
+    if (!res.ok || !data.ok) {
       card.querySelector('.uc-body').innerHTML = `<div style="color:#e0453f;font-size:12px">${escapeHtml(data.error || 'Upload failed')}</div>`;
       return;
     }
-    const pillClass = {gps:'detect-gps', filename:'detect-filename', manual:'detect-manual'}[data.method] || 'detect-none';
-    const pillText = {gps:'📍 GPS match', filename:'🔤 Filename match', 'gps-no-match':'📍 GPS (no region match)', none:'❓ Unsorted'}[data.method] || data.method;
-    card.querySelector('.uc-body').innerHTML = `
-      <div style="font-weight:700;font-size:12.5px">${escapeHtml(data.label)}</div>
-      <span class="detect-pill ${pillClass}">${pillText}</span>
-      <select data-filename="${data.filename}" data-slug="${data.slug}" onchange="reassignPhoto(this)">
-        ${DEST_OPTIONS.map(d => `<option value="${d}" ${d===data.slug?'selected':''}>${DEST_LABELS[d]}</option>`).join('')}
-      </select>`;
+    card.querySelector('.uc-body').innerHTML = `<div style="font-weight:700;font-size:12.5px;color:#15803d">✓ Uploaded</div>`;
+    if (!galleryData[data.slug]) galleryData[data.slug] = { title: tripTitle, photos: [] };
+    galleryData[data.slug].photos.unshift(data.path);
+    if (slugify(tripTitle) === slugify(currentTripTitle())) renderExistingPhotos();
   } catch (e) {
     card.querySelector('.uc-body').innerHTML = '<div style="color:#e0453f;font-size:12px">Network error</div>';
   }
-}
-
-async function reassignPhoto(selectEl) {
-  const filename = selectEl.dataset.filename;
-  const currentSlug = selectEl.dataset.slug;
-  const newSlug = selectEl.value;
-  if (newSlug === currentSlug) return;
-  selectEl.disabled = true;
-  try {
-    const res = await fetch('/api/photos/move?token=' + encodeURIComponent(token()), {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({current_slug: currentSlug, filename, new_slug: newSlug}),
-    });
-    const data = await res.json();
-    if (data.ok) {
-      selectEl.dataset.slug = data.slug;
-      selectEl.dataset.filename = data.filename;
-      const body = selectEl.closest('.uc-body');
-      body.querySelector('div').textContent = DEST_LABELS[data.slug];
-      const pill = body.querySelector('.detect-pill');
-      pill.className = 'detect-pill detect-manual';
-      pill.textContent = '✋ Moved manually';
-    } else {
-      alert(data.error || 'Move failed');
-    }
-  } catch (e) {
-    alert('Network error while moving photo');
-  }
-  selectEl.disabled = false;
 }
 
 function upcomingFieldDef() {
@@ -423,40 +479,99 @@ function previousFieldDef() {
   return [['image','Image path'], ['alt','Image alt text'], ['title','Trip title'], ['date','Date (e.g. August 2026)']];
 }
 
-function renderTripEditCard(trip, idx, group, fields) {
+function renderTripPhotoThumbs(photos) {
+  return (photos || []).map(p => `
+    <div class="trip-photo-thumb" data-path="${escapeHtml(p)}">
+      <img src="/${escapeHtml(p)}">
+      <button type="button" class="trip-photo-del" title="Delete photo">&times;</button>
+    </div>`).join('');
+}
+
+function renderTripEditCard(trip, idx, group, fields, photos) {
   const inputs = fields.map(([key, label]) => `
     <label>${escapeHtml(label)}</label>
     <input type="text" data-group="${group}" data-idx="${idx}" data-key="${key}" value="${escapeHtml(trip[key] || '')}">
   `).join('');
-  return `<div class="trip-edit-card"><button type="button" class="trip-delete-btn" title="Delete this trip">&times;</button>${inputs}</div>`;
+  return `<div class="trip-edit-card"><button type="button" class="trip-delete-btn" title="Delete this trip">&times;</button>${inputs}
+    <div class="trip-photos-section">
+      <label>Trip Photos</label>
+      <div class="trip-photo-thumbs">${renderTripPhotoThumbs(photos)}</div>
+      <input type="file" class="trip-photo-input" accept="image/*" multiple style="display:none">
+      <button type="button" class="trip-photo-upload-btn">+ Add Photos</button>
+    </div>
+  </div>`;
 }
 
 function addTripCard(group) {
   const grid = document.getElementById(group === 'upcoming' ? 'upcomingGrid' : 'previousGrid');
   const fields = group === 'upcoming' ? upcomingFieldDef() : previousFieldDef();
   const wrapper = document.createElement('div');
-  wrapper.innerHTML = renderTripEditCard({}, grid.children.length, group, fields);
+  wrapper.innerHTML = renderTripEditCard({}, grid.children.length, group, fields, []);
   grid.appendChild(wrapper.firstElementChild);
+}
+
+async function uploadTripCardPhoto(card, file) {
+  const titleInput = card.querySelector('input[data-key="title"]');
+  const tripTitle = titleInput ? titleInput.value.trim() : '';
+  if (!tripTitle) { alert('Enter a trip title first.'); return; }
+  const b64 = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+  try {
+    const res = await fetch('/api/gallery?action=upload', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ email: adminEmail(), token: token(), tripTitle, filename: file.name, data: b64 }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) { alert(data.error || 'Upload failed'); return; }
+    const thumbs = card.querySelector('.trip-photo-thumbs');
+    thumbs.insertAdjacentHTML('afterbegin', renderTripPhotoThumbs([data.path]));
+  } catch (e) {
+    alert('Network error while uploading photo');
+  }
+}
+
+async function deleteTripCardPhoto(card, thumbEl) {
+  const titleInput = card.querySelector('input[data-key="title"]');
+  const tripTitle = titleInput ? titleInput.value.trim() : '';
+  const slug = slugify(tripTitle);
+  const path = thumbEl.dataset.path;
+  if (!confirm('Delete this photo?')) return;
+  try {
+    const res = await fetch('/api/gallery?action=delete-photo', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ email: adminEmail(), token: token(), slug, path }),
+    });
+    const data = await res.json();
+    if (data.ok) thumbEl.remove(); else alert(data.error || 'Delete failed');
+  } catch (e) {
+    alert('Network error while deleting photo');
+  }
 }
 
 async function loadTripsEditor() {
   const el = document.getElementById('tripsContent');
   el.innerHTML = '<div class="empty-state">Loading...</div>';
   try {
-    const res = await fetch('/api/trips');
-    const trips = await res.json();
+    const [tripsRes, galleryRes] = await Promise.all([fetch('/api/trips'), fetch('/api/gallery').catch(() => null)]);
+    const trips = await tripsRes.json();
+    const gallery = galleryRes ? await galleryRes.json().catch(() => ({})) : {};
+    const photosFor = (title) => (gallery[slugify(title)] && gallery[slugify(title)].photos) || [];
     el.innerHTML = `
       <div class="panel">
         <h3>Upcoming Trips (shown on homepage)</h3>
         <div class="trip-edit-grid" id="upcomingGrid">
-          ${trips.upcoming.map((t,i) => renderTripEditCard(t, i, 'upcoming', upcomingFieldDef())).join('')}
+          ${trips.upcoming.map((t,i) => renderTripEditCard(t, i, 'upcoming', upcomingFieldDef(), photosFor(t.title))).join('')}
         </div>
         <button type="button" class="add-trip-btn" id="addUpcomingBtn">+ Add Upcoming Trip</button>
       </div>
       <div class="panel">
         <h3>Previous Trips (shown on homepage)</h3>
         <div class="trip-edit-grid" id="previousGrid">
-          ${trips.previous.map((t,i) => renderTripEditCard(t, i, 'previous', previousFieldDef())).join('')}
+          ${trips.previous.map((t,i) => renderTripEditCard(t, i, 'previous', previousFieldDef(), photosFor(t.title))).join('')}
         </div>
         <button type="button" class="add-trip-btn" id="addPreviousBtn">+ Add Previous Trip</button>
       </div>
@@ -469,6 +584,20 @@ async function loadTripsEditor() {
     el.addEventListener('click', (e) => {
       if (e.target.classList.contains('trip-delete-btn')) {
         e.target.closest('.trip-edit-card').remove();
+      }
+      if (e.target.classList.contains('trip-photo-upload-btn')) {
+        e.target.closest('.trip-photos-section').querySelector('.trip-photo-input').click();
+      }
+      if (e.target.classList.contains('trip-photo-del')) {
+        const thumb = e.target.closest('.trip-photo-thumb');
+        deleteTripCardPhoto(e.target.closest('.trip-edit-card'), thumb);
+      }
+    });
+    el.addEventListener('change', (e) => {
+      if (e.target.classList.contains('trip-photo-input')) {
+        const card = e.target.closest('.trip-edit-card');
+        [...e.target.files].forEach(f => uploadTripCardPhoto(card, f));
+        e.target.value = '';
       }
     });
   } catch (e) {
@@ -512,9 +641,9 @@ async function saveTrips() {
 document.getElementById('loadBtn').addEventListener('click', () => {
   localStorage.setItem('cmc_admin_token', token());
   localStorage.setItem('cmc_admin_email', adminEmail());
-  loadTripsEditor(); loadTraffic(); loadBookings(); loadChatSessions();
+  loadTripsEditor(); loadTraffic(); loadBookings(); loadChatSessions(); loadUploadTab();
 });
-if (tokenInput.value) { loadTripsEditor(); loadTraffic(); loadBookings(); loadChatSessions(); }
+if (tokenInput.value) { loadTripsEditor(); loadTraffic(); loadBookings(); loadChatSessions(); loadUploadTab(); }
 </script>
 </body>
 </html>

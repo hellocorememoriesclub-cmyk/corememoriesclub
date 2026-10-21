@@ -141,6 +141,26 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // Trip galleries (used on gallery.html) — populate from uploaded trip photos
+  const tripGalleriesEl = document.querySelector('#tripGalleries');
+  if (tripGalleriesEl) {
+    fetch('/api/gallery')
+      .then(res => res.json())
+      .then(gallery => {
+        const trips = Object.values(gallery || {}).filter(t => t.photos && t.photos.length);
+        if (!trips.length) return;
+        document.querySelector('#tripGalleriesSection').style.display = '';
+        tripGalleriesEl.innerHTML = trips.map(t => `
+          <div style="margin-bottom:28px">
+            <h3 style="font-size:17px;font-weight:800;margin-bottom:12px">${t.title}</h3>
+            <div class="gallery-grid">
+              ${t.photos.map(p => `<div class="gitem"><img src="/${p}" alt="${t.title}"></div>`).join('')}
+            </div>
+          </div>`).join('');
+      })
+      .catch(() => {});
+  }
+
   // Upcoming / Previous trip grids (used on tours.html) — populate from live trip data
   const upcomingTripsGrid = document.querySelector('#upcomingTripsGrid');
   const previousTripsGrid = document.querySelector('#previousTripsGrid');
