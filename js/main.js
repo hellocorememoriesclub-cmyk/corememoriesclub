@@ -141,6 +141,53 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // Upcoming / Previous trip grids (used on tours.html) — populate from live trip data
+  const upcomingTripsGrid = document.querySelector('#upcomingTripsGrid');
+  const previousTripsGrid = document.querySelector('#previousTripsGrid');
+  if (upcomingTripsGrid || previousTripsGrid) {
+    fetch('/api/trips')
+      .then(res => res.json())
+      .then(trips => {
+        if (upcomingTripsGrid) {
+          const items = (trips.upcoming || []).slice(0, 4);
+          upcomingTripsGrid.innerHTML = items.length ? items.map(t => `
+            <div class="pkg-card">
+              <div class="pkg-media">
+                <img src="${t.image || ''}" alt="${t.alt || t.title || ''}">
+                ${t.badge ? `<span class="pkg-tag">${t.badge}</span>` : ''}
+              </div>
+              <div class="pkg-body">
+                <div class="pkg-days">${t.days || ''}</div>
+                <h3><a href="${t.link || 'book-a-trip.html'}" style="color:inherit">${t.title || ''}</a></h3>
+                <div class="pkg-dates">${t.dates || ''}</div>
+                <div class="pkg-price-row">
+                  <div class="pkg-price"><span class="label">Starting</span><br><strong>${t.price || ''}</strong></div>
+                  <a href="${t.link || 'book-a-trip.html'}" class="btn btn-dark btn-sm">View Details</a>
+                </div>
+              </div>
+            </div>`).join('') : '<div class="empty-state">No upcoming trips right now — check back soon.</div>';
+        }
+        if (previousTripsGrid) {
+          const items = (trips.previous || []).slice(0, 4);
+          previousTripsGrid.innerHTML = items.length ? items.map(t => `
+            <a class="pkg-card" href="gallery.html" style="display:block">
+              <div class="pkg-media">
+                <img src="${t.image || ''}" alt="${t.alt || t.title || ''}">
+                <span class="pkg-tag">✓ Completed</span>
+              </div>
+              <div class="pkg-body">
+                <h3>${t.title || ''}</h3>
+                <div class="pkg-dates">${t.date || ''}</div>
+              </div>
+            </a>`).join('') : '<div class="empty-state">No previous trips to show yet.</div>';
+        }
+      })
+      .catch(() => {
+        if (upcomingTripsGrid) upcomingTripsGrid.innerHTML = '<div class="empty-state">Could not load trips.</div>';
+        if (previousTripsGrid) previousTripsGrid.innerHTML = '<div class="empty-state">Could not load trips.</div>';
+      });
+  }
+
   // Destination dropdown — populate from current upcoming trips
   const destinationSelect = document.querySelector('#destinationSelect');
   if (destinationSelect) {
