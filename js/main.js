@@ -141,6 +141,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // Destination dropdown — populate from current upcoming trips
+  const destinationSelect = document.querySelector('#destinationSelect');
+  if (destinationSelect) {
+    fetch('/api/trips')
+      .then(res => res.json())
+      .then(trips => {
+        const upcoming = trips.upcoming || [];
+        if (!upcoming.length) return;
+        destinationSelect.innerHTML = upcoming
+          .map(t => `<option>${t.title}</option>`)
+          .join('') + '<option>Not sure yet</option>';
+      })
+      .catch(() => {});
+  }
+
   // Booking form — submits to the /api/bookings backend
   const bookForm = document.querySelector('#bookingForm');
   if (bookForm) {
@@ -208,7 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch (err) {
         showMsg("Couldn't reach our server. Please check your connection and try again.", true);
       } finally {
-        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Request Callback →'; }
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Book a Call Back →'; }
       }
     });
   }
