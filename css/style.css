@@ -488,11 +488,11 @@ footer p.about-txt{font-size:14.5px;line-height:1.7;color:var(--text-muted-2);ma
 .err-page h2{font-size:26px;font-weight:600;margin:10px 0 14px;letter-spacing:-.01em}
 .err-page p{color:var(--text-muted-2);margin-bottom:26px;max-width:440px}
 
-/* ===== Live chat widget ===== */
+/* ===== WhatsApp chat button ===== */
 .cmc-chat-bubble{
-  position:fixed;bottom:22px;right:22px;width:58px;height:58px;border-radius:50%;
-  background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;
-  font-size:26px;box-shadow:0 10px 30px rgba(0,0,0,.25);z-index:400;cursor:pointer;border:none;
+  position:fixed;bottom:22px;right:22px;width:56px;height:56px;border-radius:50%;
+  background:#25d366;color:#fff;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 10px 30px rgba(0,0,0,.25);z-index:400;cursor:pointer;border:none;
   transition:transform .2s ease;
 }
 .cmc-chat-bubble:hover{transform:scale(1.08)}

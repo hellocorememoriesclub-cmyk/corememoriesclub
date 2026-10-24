@@ -325,129 +325,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function initChatWidget() {
   if (document.body.dataset.noChatWidget !== undefined) return;
-  const isLocalBackend = ['localhost', '127.0.0.1'].includes(location.hostname);
-  if (!isLocalBackend) return;
 
-  let sessionId = localStorage.getItem('cmc_chat_session');
-  if (!sessionId) {
-    sessionId = 'sess-' + Math.random().toString(36).slice(2) + Date.now().toString(36);
-    localStorage.setItem('cmc_chat_session', sessionId);
-  }
-  let visitorName = localStorage.getItem('cmc_chat_name') || '';
-  let lastSeen = 0;
-  let pollTimer = null;
+  const link = document.createElement('a');
+  link.className = 'cmc-chat-bubble';
+  link.setAttribute('aria-label', 'Chat with us on WhatsApp');
+  link.target = '_blank';
+  link.rel = 'noopener noreferrer';
+  link.href = 'https://wa.me/918826526252?text=' + encodeURIComponent(`Hi! I'm on ${location.pathname.replace('.html','').replace('/','') || 'the homepage'} and have a question about a trip.`);
+  link.innerHTML = '<svg viewBox="0 0 24 24" width="28" height="28" fill="#fff"><path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.48-.89-.79-1.48-1.76-1.66-2.06-.17-.3-.02-.46.13-.6.14-.14.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.6-.91-2.2-.24-.58-.49-.5-.67-.5h-.57c-.2 0-.52.07-.8.37-.27.3-1.04 1.02-1.04 2.47 0 1.45 1.06 2.86 1.21 3.06.15.2 2.1 3.2 5.08 4.48.71.3 1.26.49 1.69.63.71.22 1.36.19 1.87.12.57-.09 1.76-.72 2-1.42.25-.7.25-1.3.17-1.42-.07-.12-.27-.2-.57-.35z"/><path d="M12.02 2C6.5 2 2 6.47 2 11.96c0 1.85.5 3.59 1.39 5.09L2 22l5.1-1.34a10.03 10.03 0 0 0 4.92 1.3h.01c5.51 0 10-4.47 10-9.96S17.53 2 12.02 2zm0 18.18h-.01c-1.57 0-3.1-.42-4.44-1.21l-.32-.19-3.3.87.88-3.2-.21-.33a8.14 8.14 0 0 1-1.25-4.36c0-4.52 3.69-8.2 8.23-8.2a8.17 8.17 0 0 1 8.2 8.2c0 4.52-3.69 8.42-8.78 8.42z"/></svg>';
 
-  const bubble = document.createElement('button');
-  bubble.className = 'cmc-chat-bubble';
-  bubble.setAttribute('aria-label', 'Chat with us');
-  bubble.innerHTML = '💬<span class="cmc-chat-dot"></span>';
-
-  const win = document.createElement('div');
-  win.className = 'cmc-chat-window';
-  win.innerHTML = `
-    <div class="cmc-chat-head">
-      <strong>Core Memories Club</strong>
-      <span>Usually replies within a few hours</span>
-    </div>
-    <div class="cmc-chat-body" id="cmcChatBody"></div>
-    <div class="cmc-chat-name-row" id="cmcNameRow" style="${visitorName ? 'display:none' : ''}">
-      <input type="text" id="cmcNameInput" placeholder="Your name">
-      <button id="cmcNameBtn">Start</button>
-    </div>
-    <div class="cmc-chat-input-row" id="cmcInputRow" style="${visitorName ? '' : 'display:none'}">
-      <input type="text" id="cmcMsgInput" placeholder="Type a message...">
-      <button id="cmcSendBtn" aria-label="Send">➤</button>
-    </div>
-  `;
-
-  document.body.appendChild(bubble);
-  document.body.appendChild(win);
-
-  const body = win.querySelector('#cmcChatBody');
-  const nameInput = win.querySelector('#cmcNameInput');
-  const nameBtn = win.querySelector('#cmcNameBtn');
-  const nameRow = win.querySelector('#cmcNameRow');
-  const inputRow = win.querySelector('#cmcInputRow');
-  const msgInput = win.querySelector('#cmcMsgInput');
-  const sendBtn = win.querySelector('#cmcSendBtn');
-
-  function renderMessages(messages) {
-    if (!messages.length && !body.children.length) {
-      body.innerHTML = '<div style="text-align:center;color:var(--text-muted-2);font-size:12.5px;margin-top:20px">Send us a message — we usually reply fast!</div>';
-      return;
-    }
-    messages.forEach(m => {
-      const div = document.createElement('div');
-      div.className = 'cmc-chat-msg ' + m.sender;
-      div.textContent = m.message;
-      body.appendChild(div);
-    });
-    body.scrollTop = body.scrollHeight;
-  }
-
-  async function poll() {
-    try {
-      const res = await fetch(`/api/chat/poll?session=${encodeURIComponent(sessionId)}&since=${lastSeen}`);
-      const data = await res.json();
-      if (data.ok && data.messages.length) {
-        const newAdminMsgs = data.messages.filter(m => m.sender === 'admin');
-        if (body.children.length === 1 && body.children[0].tagName === 'DIV' && !body.dataset.hasMsgs) {
-          body.innerHTML = '';
-        }
-        body.dataset.hasMsgs = '1';
-        renderMessages(data.messages);
-        lastSeen = data.messages[data.messages.length - 1].created_at;
-        if (newAdminMsgs.length && !win.classList.contains('open')) {
-          bubble.classList.add('has-unread');
-        }
-      }
-    } catch (e) { /* silent */ }
-  }
-
-  bubble.addEventListener('click', () => {
-    win.classList.toggle('open');
-    bubble.classList.remove('has-unread');
-    if (win.classList.contains('open')) {
-      if (!pollTimer) { poll(); pollTimer = setInterval(poll, 4000); }
-    }
-  });
-
-  nameBtn.addEventListener('click', startChat);
-  nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') startChat(); });
-
-  function startChat() {
-    const name = nameInput.value.trim();
-    if (!name) return;
-    visitorName = name;
-    localStorage.setItem('cmc_chat_name', name);
-    nameRow.style.display = 'none';
-    inputRow.style.display = '';
-    sendMessage(`Hi, I'm ${name}!`);
-    msgInput.focus();
-  }
-
-  sendBtn.addEventListener('click', () => {
-    const msg = msgInput.value.trim();
-    if (!msg) return;
-    msgInput.value = '';
-    sendMessage(msg);
-  });
-  msgInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendBtn.click(); });
-
-  async function sendMessage(message) {
-    const div = document.createElement('div');
-    div.className = 'cmc-chat-msg visitor';
-    div.textContent = message;
-    body.dataset.hasMsgs = '1';
-    if (body.children.length === 1 && body.children[0].textContent.includes('Send us a message')) body.innerHTML = '';
-    body.appendChild(div);
-    body.scrollTop = body.scrollHeight;
-    try {
-      await fetch('/api/chat/send', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ session: sessionId, sender: 'visitor', visitor_name: visitorName, message }),
-      });
-      lastSeen = Math.max(lastSeen, Math.floor(Date.now() / 1000));
-    } catch (e) { /* silent */ }
-  }
+  document.body.appendChild(link);
 }
