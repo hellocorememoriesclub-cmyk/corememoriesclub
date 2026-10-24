@@ -177,14 +177,17 @@ nav.main-nav a:hover{opacity:1}
 .dest-scroller::-webkit-scrollbar{display:none}
 .dest-item{flex:0 0 auto;width:118px;text-align:center;cursor:default}
 .dest-photo{
-  width:104px;height:104px;border-radius:50%;margin:0 auto 12px;overflow:hidden;
-  border:3px solid var(--bg-light);box-shadow:var(--shadow);position:relative;
+  width:104px;height:104px;margin:0 auto 12px;position:relative;
+}
+.dest-photo .dest-photo-inner{
+  width:100%;height:100%;border-radius:50%;overflow:hidden;
+  border:3px solid var(--bg-light);box-shadow:var(--shadow);
 }
 .dest-photo img{width:100%;height:100%;object-fit:cover}
 .dest-flag{
-  position:absolute;bottom:2px;right:2px;width:28px;height:28px;border-radius:50%;
+  position:absolute;bottom:-2px;right:-2px;width:30px;height:30px;border-radius:50%;
   background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;
-  font-size:15px;line-height:1;
+  font-size:16px;line-height:1;overflow:hidden;
 }
 .dest-item .name{font-weight:700;font-size:14.5px}
 .dest-item .price{font-size:11.5px;color:var(--text-muted-2);margin-top:2px}
