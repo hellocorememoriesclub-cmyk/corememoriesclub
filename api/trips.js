@@ -52,6 +52,10 @@ function esc(s) {
   }[c]));
 }
 
+function slugify(s) {
+  return String(s || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'trip';
+}
+
 function renderUpcomingCard(t) {
   return `        <div class="pkg-card">
           <div class="pkg-media">
@@ -71,7 +75,7 @@ function renderUpcomingCard(t) {
 }
 
 function renderPreviousCard(t) {
-  return `        <a class="pkg-card" href="gallery.html" style="display:block">
+  return `        <a class="pkg-card" href="gallery.html#trip-${esc(slugify(t.title))}" style="display:block">
           <div class="pkg-media">
             <img src="${esc(t.image)}" alt="${esc(t.alt)}">
             <span class="pkg-tag">✓ Completed</span>

@@ -1,5 +1,9 @@
 // Core Memories Club — site behaviour
 
+function slugify(s) {
+  return String(s || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'trip';
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   // Mobile nav
   const menuToggle = document.querySelector('.menu-toggle');
@@ -107,6 +111,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // Deep-link a trip card straight to its photos: "gallery.html#trip-<slug>"
+  // matches an existing filter category by fuzzy name (e.g. "new-zealand-group-trip" -> "newzealand"),
+  // falling back to the admin-uploaded trip gallery section if no category matches.
+  if (filters.length && location.hash.startsWith('#trip-')) {
+    const normalized = location.hash.slice(6).replace(/-/g, '');
+    const matchBtn = [...filters].find(b => b.dataset.filter !== 'all' && normalized.includes(b.dataset.filter));
+    if (matchBtn) {
+      matchBtn.click();
+      document.querySelector('.gallery-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
   // Lightbox
   const lightbox = document.querySelector('.lightbox');
   if (lightbox) {
@@ -158,12 +174,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!trips.length) return;
         document.querySelector('#tripGalleriesSection').style.display = '';
         tripGalleriesEl.innerHTML = trips.map(t => `
-          <div style="margin-bottom:28px">
-            <h3 style="font-size:17px;font-weight:800;margin-bottom:12px">${t.title}</h3>
+          <div style="margin-bottom:28px" id="trip-${slugify(t.title)}">
+            <h3 style="font-size:17px;font-weight:600;margin-bottom:12px">${t.title}</h3>
             <div class="gallery-grid">
               ${t.photos.map(p => `<div class="gitem"><img src="/${p}" alt="${t.title}"></div>`).join('')}
             </div>
           </div>`).join('');
+        if (location.hash) document.querySelector(location.hash)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       })
       .catch(() => {});
   }
