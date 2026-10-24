@@ -34,7 +34,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }, { passive: false });
   });
 
-  // Scroll reveal
+  // Scroll reveal — auto-tag common content blocks so pages don't need the class by hand
+  document.querySelectorAll(
+    '.section-head, .pkg-card, .testi-card, .blog-card, .why-card, .cat-card, .cta-banner, .card, .dest-item'
+  ).forEach(el => el.classList.add('reveal'));
+
   const revealEls = document.querySelectorAll('.reveal');
   const io = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
@@ -44,7 +48,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }, { threshold: 0.12 });
-  revealEls.forEach(el => io.observe(el));
+  revealEls.forEach((el, i) => {
+    el.style.transitionDelay = `${(i % 4) * 70}ms`;
+    io.observe(el);
+  });
 
   // Header shadow on scroll
   const header = document.querySelector('.site-header');
