@@ -33,7 +33,33 @@ function attachTripDocLinks() {
     .catch(() => {});
 }
 
+// Applies admin-edited phone/email/address everywhere those are marked up on the page.
+function applySiteSettings() {
+  const hasTargets = document.querySelector('.site-tel, .site-mail, .site-tel-text, .site-mail-text, .site-tel-href, .site-wa-href, .site-address-text');
+  if (!hasTargets) return;
+  fetch('/api/site-settings')
+    .then(res => res.json())
+    .then(s => {
+      const phoneDigits = (s.phone || '').replace(/[^0-9]/g, '');
+      document.querySelectorAll('.site-tel').forEach(el => {
+        el.href = 'tel:+' + phoneDigits;
+        el.textContent = `📞 ${s.phone}`;
+      });
+      document.querySelectorAll('.site-tel-text').forEach(el => { el.textContent = `📞 ${s.phone}`; });
+      document.querySelectorAll('.site-tel-href').forEach(el => { el.href = 'tel:+' + phoneDigits; });
+      document.querySelectorAll('.site-wa-href').forEach(el => { el.href = 'https://wa.me/' + phoneDigits; });
+      document.querySelectorAll('.site-mail').forEach(el => {
+        el.href = 'mailto:' + s.email;
+        el.textContent = `✉️ ${s.email}`;
+      });
+      document.querySelectorAll('.site-mail-text').forEach(el => { el.textContent = `✉️ ${s.email}`; });
+      document.querySelectorAll('.site-address-text').forEach(el => { el.textContent = `📍 ${s.address}`; });
+    })
+    .catch(() => {});
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+  applySiteSettings();
   // Mobile nav
   const menuToggle = document.querySelector('.menu-toggle');
   const mobileNav = document.querySelector('.mobile-nav');
@@ -355,15 +381,21 @@ document.addEventListener('DOMContentLoaded', () => {
   initChatWidget();
 });
 
-function initChatWidget() {
+async function initChatWidget() {
   if (document.body.dataset.noChatWidget !== undefined) return;
+
+  let waNumber = '918826526252';
+  try {
+    const settings = await fetch('/api/site-settings').then(r => r.json());
+    if (settings.phone) waNumber = settings.phone.replace(/[^0-9]/g, '');
+  } catch (e) { /* use default */ }
 
   const link = document.createElement('a');
   link.className = 'cmc-chat-bubble';
   link.setAttribute('aria-label', 'Chat with us on WhatsApp');
   link.target = '_blank';
   link.rel = 'noopener noreferrer';
-  link.href = 'https://wa.me/918826526252?text=' + encodeURIComponent(`Hi! I'm on ${location.pathname.replace('.html','').replace('/','') || 'the homepage'} and have a question about a trip.`);
+  link.href = 'https://wa.me/' + waNumber + '?text=' + encodeURIComponent(`Hi! I'm on ${location.pathname.replace('.html','').replace('/','') || 'the homepage'} and have a question about a trip.`);
   link.innerHTML = '<svg viewBox="0 0 24 24" width="28" height="28" fill="#fff"><path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.48-.89-.79-1.48-1.76-1.66-2.06-.17-.3-.02-.46.13-.6.14-.14.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.6-.91-2.2-.24-.58-.49-.5-.67-.5h-.57c-.2 0-.52.07-.8.37-.27.3-1.04 1.02-1.04 2.47 0 1.45 1.06 2.86 1.21 3.06.15.2 2.1 3.2 5.08 4.48.71.3 1.26.49 1.69.63.71.22 1.36.19 1.87.12.57-.09 1.76-.72 2-1.42.25-.7.25-1.3.17-1.42-.07-.12-.27-.2-.57-.35z"/><path d="M12.02 2C6.5 2 2 6.47 2 11.96c0 1.85.5 3.59 1.39 5.09L2 22l5.1-1.34a10.03 10.03 0 0 0 4.92 1.3h.01c5.51 0 10-4.47 10-9.96S17.53 2 12.02 2zm0 18.18h-.01c-1.57 0-3.1-.42-4.44-1.21l-.32-.19-3.3.87.88-3.2-.21-.33a8.14 8.14 0 0 1-1.25-4.36c0-4.52 3.69-8.2 8.23-8.2a8.17 8.17 0 0 1 8.2 8.2c0 4.52-3.69 8.42-8.78 8.42z"/></svg>';
 
   document.body.appendChild(link);

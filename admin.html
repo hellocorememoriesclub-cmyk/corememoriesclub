@@ -127,6 +127,7 @@
       <a class="nav-item" data-view="bookings">🧾 Inquiries</a>
       <a class="nav-item" data-view="upload">📸 Upload Photos</a>
       <a class="nav-item active" data-view="trips">✈️ Trips Manager</a>
+      <a class="nav-item" data-view="settings">⚙️ Site Settings</a>
       <div style="margin-top:auto;padding-top:20px;border-top:1px solid rgba(255,255,255,.1)">
         <a href="index.html" class="nav-item">← Back to Site</a>
       </div>
@@ -182,6 +183,37 @@
       <div class="view active" id="view-trips">
         <div id="tripsContent"><div class="empty-state">Enter admin email and token, then click Connect.</div></div>
       </div>
+
+      <div class="view" id="view-settings">
+        <div class="panel">
+          <h3>Logo</h3>
+          <p style="font-size:13px;color:var(--text-muted-2);margin-bottom:16px">Replaces the logo everywhere on the site — header, footer, every page.</p>
+          <div style="display:flex;align-items:center;gap:16px">
+            <img id="currentLogoPreview" src="/images/photos/logo.png" alt="Current logo" style="height:56px;width:auto;border-radius:8px;border:1px solid var(--border);padding:6px;background:#fff">
+            <div>
+              <input type="file" id="logoInput" accept="image/png,image/jpeg" style="display:none">
+              <button type="button" class="add-trip-btn" id="logoUploadBtn" style="margin-bottom:0">Replace Logo</button>
+              <div id="logoMsg" style="font-size:12.5px;margin-top:6px"></div>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>Contact Info</h3>
+          <p style="font-size:13px;color:var(--text-muted-2);margin-bottom:16px">Shown in the header, footer, Call/WhatsApp buttons and the chat bubble on every page.</p>
+          <div class="trip-edit-grid" style="grid-template-columns:1fr">
+            <div>
+              <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted-2);margin-bottom:4px">Phone (with country code)</label>
+              <input type="text" id="settingsPhone" placeholder="+91 88265 26252" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:9px;font-size:14px;font-family:inherit;margin-bottom:14px">
+              <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted-2);margin-bottom:4px">Email</label>
+              <input type="email" id="settingsEmail" placeholder="hello@corememoriesclub.com" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:9px;font-size:14px;font-family:inherit;margin-bottom:14px">
+              <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted-2);margin-bottom:4px">Address</label>
+              <input type="text" id="settingsAddress" placeholder="Mumbai, India" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:9px;font-size:14px;font-family:inherit">
+            </div>
+          </div>
+          <button class="save-trips-btn" id="saveSettingsBtn" style="margin-top:18px">Save Changes</button>
+          <span class="trips-save-msg" id="settingsSaveMsg"></span>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -209,6 +241,7 @@ document.querySelectorAll('.nav-item[data-view]').forEach(item => {
     if (item.dataset.view === 'trips') loadTripsEditor();
     if (item.dataset.view === 'bookings') loadBookings();
     if (item.dataset.view === 'upload') loadUploadTab();
+    if (item.dataset.view === 'settings') loadSiteSettings();
   });
 });
 
@@ -637,14 +670,81 @@ function updateConnDot() {
   connDot.title = connected ? 'Connected' : 'Not connected';
 }
 
+async function loadSiteSettings() {
+  try {
+    const res = await fetch('/api/site-settings');
+    const s = await res.json();
+    document.getElementById('settingsPhone').value = s.phone || '';
+    document.getElementById('settingsEmail').value = s.email || '';
+    document.getElementById('settingsAddress').value = s.address || '';
+    document.getElementById('currentLogoPreview').src = '/images/photos/logo.png?t=' + Date.now();
+  } catch (e) { /* ignore */ }
+}
+
+document.getElementById('logoUploadBtn').addEventListener('click', () => {
+  document.getElementById('logoInput').click();
+});
+document.getElementById('logoInput').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const logoMsg = document.getElementById('logoMsg');
+  logoMsg.style.color = 'var(--text-muted-2)';
+  logoMsg.textContent = 'Uploading...';
+  const b64 = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+  try {
+    const res = await fetch('/api/site-settings?action=upload-logo', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ email: adminEmail(), token: token(), data: b64 }),
+    });
+    const data = await res.json();
+    if (res.status === 401) { logoMsg.style.color = '#e0453f'; logoMsg.textContent = 'Invalid email or token.'; return; }
+    if (data.ok) {
+      logoMsg.style.color = '#15803d'; logoMsg.textContent = 'Logo updated! Live across the site shortly.';
+      document.getElementById('currentLogoPreview').src = '/images/photos/logo.png?t=' + Date.now();
+    } else {
+      logoMsg.style.color = '#e0453f'; logoMsg.textContent = data.error || 'Upload failed.';
+    }
+  } catch (e) {
+    logoMsg.style.color = '#e0453f'; logoMsg.textContent = 'Network error.';
+  }
+  e.target.value = '';
+});
+
+document.getElementById('saveSettingsBtn').addEventListener('click', async () => {
+  const msg = document.getElementById('settingsSaveMsg');
+  msg.style.color = 'var(--text-muted-2)'; msg.textContent = 'Saving...';
+  try {
+    const res = await fetch('/api/site-settings?action=save', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        email: adminEmail(), token: token(),
+        phone: document.getElementById('settingsPhone').value,
+        contactEmail: document.getElementById('settingsEmail').value,
+        address: document.getElementById('settingsAddress').value,
+      }),
+    });
+    const data = await res.json();
+    if (res.status === 401) { msg.style.color = '#e0453f'; msg.textContent = 'Invalid email or token.'; return; }
+    if (data.ok) { msg.style.color = '#15803d'; msg.textContent = 'Saved! Live across the site shortly.'; }
+    else { msg.style.color = '#e0453f'; msg.textContent = data.error || 'Save failed.'; }
+  } catch (e) {
+    msg.style.color = '#e0453f'; msg.textContent = 'Network error.';
+  }
+});
+
 document.getElementById('loadBtn').addEventListener('click', () => {
   localStorage.setItem('cmc_admin_token', token());
   localStorage.setItem('cmc_admin_email', adminEmail());
   updateConnDot();
-  loadTripsEditor(); loadTraffic(); loadBookings(); loadUploadTab();
+  loadTripsEditor(); loadTraffic(); loadBookings(); loadUploadTab(); loadSiteSettings();
 });
 updateConnDot();
-if (tokenInput.value) { loadTripsEditor(); loadTraffic(); loadBookings(); loadUploadTab(); }
+if (tokenInput.value) { loadTripsEditor(); loadTraffic(); loadBookings(); loadUploadTab(); loadSiteSettings(); }
 </script>
 </body>
 </html>
