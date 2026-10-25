@@ -107,6 +107,14 @@
   .trip-photo-thumb img{width:100%;height:100%;object-fit:cover;display:block}
   .trip-photo-del{position:absolute;top:1px;right:1px;width:16px;height:16px;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;font-size:11px;line-height:1;cursor:pointer}
   .trip-photo-upload-btn{padding:6px 14px;border-radius:999px;background:var(--bg-light);border:1px dashed var(--border);font-size:12px;font-weight:700;color:var(--text-muted-2);cursor:pointer}
+  .trip-docs-section{margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+  .trip-doc-list{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+  .trip-doc-empty{font-size:12px;color:var(--text-muted-2)}
+  .trip-doc-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 10px;background:var(--bg-light);border-radius:8px}
+  .trip-doc-row a{font-size:12.5px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .trip-doc-row a:hover{color:var(--accent)}
+  .trip-doc-del{width:18px;height:18px;border-radius:50%;background:#fee2e2;color:#dc2626;flex:0 0 auto;font-size:12px;line-height:1;cursor:pointer}
+  .trip-doc-upload-btn{padding:6px 14px;border-radius:999px;background:var(--bg-light);border:1px dashed var(--border);font-size:12px;font-weight:700;color:var(--text-muted-2);cursor:pointer}
 </style>
 </head>
 <body>
@@ -386,7 +394,16 @@ function renderTripPhotoThumbs(photos) {
     </div>`).join('');
 }
 
-function renderTripEditCard(trip, idx, group, fields, photos) {
+function renderTripDocList(docs) {
+  if (!docs || !docs.length) return '<div class="trip-doc-empty">No documents yet.</div>';
+  return docs.map(d => `
+    <div class="trip-doc-row" data-path="${escapeHtml(d.path)}">
+      <a href="/${escapeHtml(d.path)}" target="_blank" rel="noopener">📄 ${escapeHtml(d.name)}</a>
+      <button type="button" class="trip-doc-del" title="Delete document">&times;</button>
+    </div>`).join('');
+}
+
+function renderTripEditCard(trip, idx, group, fields, photos, docs) {
   const inputs = fields.map(([key, label]) => `
     <label>${escapeHtml(label)}</label>
     <input type="text" data-group="${group}" data-idx="${idx}" data-key="${key}" value="${escapeHtml(trip[key] || '')}">
@@ -398,6 +415,12 @@ function renderTripEditCard(trip, idx, group, fields, photos) {
       <input type="file" class="trip-photo-input" accept="image/*" multiple style="display:none">
       <button type="button" class="trip-photo-upload-btn">+ Add Photos</button>
     </div>
+    <div class="trip-docs-section">
+      <label>Trip Documents (itinerary, brochure PDFs)</label>
+      <div class="trip-doc-list">${renderTripDocList(docs)}</div>
+      <input type="file" class="trip-doc-input" accept="application/pdf" multiple style="display:none">
+      <button type="button" class="trip-doc-upload-btn">+ Add PDF</button>
+    </div>
   </div>`;
 }
 
@@ -405,7 +428,7 @@ function addTripCard(group) {
   const grid = document.getElementById(group === 'upcoming' ? 'upcomingGrid' : 'previousGrid');
   const fields = group === 'upcoming' ? upcomingFieldDef() : previousFieldDef();
   const wrapper = document.createElement('div');
-  wrapper.innerHTML = renderTripEditCard({}, grid.children.length, group, fields, []);
+  wrapper.innerHTML = renderTripEditCard({}, grid.children.length, group, fields, [], []);
   grid.appendChild(wrapper.firstElementChild);
 }
 
@@ -451,26 +474,81 @@ async function deleteTripCardPhoto(card, thumbEl) {
   }
 }
 
+async function uploadTripCardDoc(card, file) {
+  const titleInput = card.querySelector('input[data-key="title"]');
+  const tripTitle = titleInput ? titleInput.value.trim() : '';
+  if (!tripTitle) { alert('Enter a trip title first.'); return; }
+  if (!/\.pdf$/i.test(file.name)) { alert('Only PDF files are supported.'); return; }
+  const b64 = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+  try {
+    const res = await fetch('/api/trip-docs?action=upload', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ email: adminEmail(), token: token(), tripTitle, filename: file.name, data: b64 }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) { alert(data.error || 'Upload failed'); return; }
+    const list = card.querySelector('.trip-doc-list');
+    const empty = list.querySelector('.trip-doc-empty');
+    if (empty) empty.remove();
+    list.insertAdjacentHTML('afterbegin', renderTripDocList([{ name: data.name, path: data.path }]));
+  } catch (e) {
+    alert('Network error while uploading document');
+  }
+}
+
+async function deleteTripCardDoc(card, rowEl) {
+  const titleInput = card.querySelector('input[data-key="title"]');
+  const tripTitle = titleInput ? titleInput.value.trim() : '';
+  const slug = slugify(tripTitle);
+  const path = rowEl.dataset.path;
+  if (!confirm('Delete this document?')) return;
+  try {
+    const res = await fetch('/api/trip-docs?action=delete', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ email: adminEmail(), token: token(), slug, path }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      const list = rowEl.closest('.trip-doc-list');
+      rowEl.remove();
+      if (!list.querySelector('.trip-doc-row')) list.innerHTML = '<div class="trip-doc-empty">No documents yet.</div>';
+    } else {
+      alert(data.error || 'Delete failed');
+    }
+  } catch (e) {
+    alert('Network error while deleting document');
+  }
+}
+
 async function loadTripsEditor() {
   const el = document.getElementById('tripsContent');
   el.innerHTML = '<div class="empty-state">Loading...</div>';
   try {
-    const [tripsRes, galleryRes] = await Promise.all([fetch('/api/trips'), fetch('/api/gallery').catch(() => null)]);
+    const [tripsRes, galleryRes, docsRes] = await Promise.all([
+      fetch('/api/trips'), fetch('/api/gallery').catch(() => null), fetch('/api/trip-docs').catch(() => null),
+    ]);
     const trips = await tripsRes.json();
     const gallery = galleryRes ? await galleryRes.json().catch(() => ({})) : {};
+    const tripDocs = docsRes ? await docsRes.json().catch(() => ({})) : {};
     const photosFor = (title) => (gallery[slugify(title)] && gallery[slugify(title)].photos) || [];
+    const docsFor = (title) => (tripDocs[slugify(title)] && tripDocs[slugify(title)].docs) || [];
     el.innerHTML = `
       <div class="panel">
         <h3>Upcoming Trips (shown on homepage)</h3>
         <div class="trip-edit-grid" id="upcomingGrid">
-          ${trips.upcoming.map((t,i) => renderTripEditCard(t, i, 'upcoming', upcomingFieldDef(), photosFor(t.title))).join('')}
+          ${trips.upcoming.map((t,i) => renderTripEditCard(t, i, 'upcoming', upcomingFieldDef(), photosFor(t.title), docsFor(t.title))).join('')}
         </div>
         <button type="button" class="add-trip-btn" id="addUpcomingBtn">+ Add Upcoming Trip</button>
       </div>
       <div class="panel">
         <h3>Previous Trips (shown on homepage)</h3>
         <div class="trip-edit-grid" id="previousGrid">
-          ${trips.previous.map((t,i) => renderTripEditCard(t, i, 'previous', previousFieldDef(), photosFor(t.title))).join('')}
+          ${trips.previous.map((t,i) => renderTripEditCard(t, i, 'previous', previousFieldDef(), photosFor(t.title), docsFor(t.title))).join('')}
         </div>
         <button type="button" class="add-trip-btn" id="addPreviousBtn">+ Add Previous Trip</button>
       </div>
@@ -491,11 +569,23 @@ async function loadTripsEditor() {
         const thumb = e.target.closest('.trip-photo-thumb');
         deleteTripCardPhoto(e.target.closest('.trip-edit-card'), thumb);
       }
+      if (e.target.classList.contains('trip-doc-upload-btn')) {
+        e.target.closest('.trip-docs-section').querySelector('.trip-doc-input').click();
+      }
+      if (e.target.classList.contains('trip-doc-del')) {
+        const row = e.target.closest('.trip-doc-row');
+        deleteTripCardDoc(e.target.closest('.trip-edit-card'), row);
+      }
     });
     el.addEventListener('change', (e) => {
       if (e.target.classList.contains('trip-photo-input')) {
         const card = e.target.closest('.trip-edit-card');
         [...e.target.files].forEach(f => uploadTripCardPhoto(card, f));
+        e.target.value = '';
+      }
+      if (e.target.classList.contains('trip-doc-input')) {
+        const card = e.target.closest('.trip-edit-card');
+        [...e.target.files].forEach(f => uploadTripCardDoc(card, f));
         e.target.value = '';
       }
     });

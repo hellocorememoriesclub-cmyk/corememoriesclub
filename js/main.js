@@ -4,6 +4,35 @@ function slugify(s) {
   return String(s || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'trip';
 }
 
+// Adds a small "Itinerary PDF" link into any .pkg-card whose title has an uploaded trip document.
+function attachTripDocLinks() {
+  const cards = document.querySelectorAll('.pkg-card h3');
+  if (!cards.length) return;
+  fetch('/api/trip-docs')
+    .then(res => res.json())
+    .then(tripDocs => {
+      cards.forEach(h3 => {
+        const card = h3.closest('.pkg-card');
+        if (!card || card.tagName === 'A') return; // skip cards that are themselves links (e.g. Previous Trips) — no nested <a>
+        const title = h3.textContent.trim();
+        const entry = tripDocs[slugify(title)];
+        const doc = entry && entry.docs && entry.docs[0];
+        if (!doc) return;
+        const body = h3.closest('.pkg-body');
+        if (!body || body.querySelector('.pkg-doc-link')) return;
+        const link = document.createElement('a');
+        link.href = '/' + doc.path;
+        link.target = '_blank';
+        link.rel = 'noopener';
+        link.className = 'pkg-doc-link';
+        link.textContent = '📄 Itinerary PDF';
+        const dates = body.querySelector('.pkg-dates');
+        (dates || h3).insertAdjacentElement('afterend', link);
+      });
+    })
+    .catch(() => {});
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   // Mobile nav
   const menuToggle = document.querySelector('.menu-toggle');
@@ -229,7 +258,10 @@ document.addEventListener('DOMContentLoaded', () => {
       .catch(() => {
         if (upcomingTripsGrid) upcomingTripsGrid.innerHTML = '<div class="empty-state">Could not load trips.</div>';
         if (previousTripsGrid) previousTripsGrid.innerHTML = '<div class="empty-state">Could not load trips.</div>';
-      });
+      })
+      .then(attachTripDocLinks);
+  } else {
+    attachTripDocLinks();
   }
 
   // Destination dropdown — populate from current upcoming trips

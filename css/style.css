@@ -230,6 +230,7 @@ nav.main-nav a:hover{opacity:1}
 .pkg-days{font-size:12px;font-weight:600;color:var(--text-muted-2);letter-spacing:.02em;margin-bottom:8px}
 .pkg-body h3{font-size:19px;font-weight:600;margin-bottom:10px;line-height:1.25;letter-spacing:-.01em}
 .pkg-dates{font-size:13px;color:var(--text-muted-2);margin-bottom:14px}
+.pkg-doc-link{display:inline-flex;align-items:center;gap:4px;font-size:12.5px;font-weight:600;color:var(--accent);margin:-8px 0 14px}
 .pkg-locs{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
 .pkg-locs span{
   background:var(--bg-light);border-radius:10px;padding:6px 10px;font-size:11.5px;font-weight:600;
