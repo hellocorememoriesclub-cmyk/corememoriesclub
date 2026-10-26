@@ -210,6 +210,32 @@
               <input type="text" id="settingsAddress" placeholder="Mumbai, India" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:9px;font-size:14px;font-family:inherit">
             </div>
           </div>
+        </div>
+        <div class="panel">
+          <h3>Homepage Stats</h3>
+          <p style="font-size:13px;color:var(--text-muted-2);margin-bottom:16px">Shown in the hero section and the trust bar on the homepage.</p>
+          <div class="trip-edit-grid">
+            <div>
+              <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted-2);margin-bottom:4px">Travellers</label>
+              <input type="text" id="settingsTravellers" placeholder="1,000+" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:9px;font-size:14px;font-family:inherit">
+            </div>
+            <div>
+              <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted-2);margin-bottom:4px">Destinations</label>
+              <input type="text" id="settingsDestinations" placeholder="30+" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:9px;font-size:14px;font-family:inherit">
+            </div>
+            <div>
+              <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted-2);margin-bottom:4px">Average Rating (out of 5)</label>
+              <input type="text" id="settingsRating" placeholder="4.8" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:9px;font-size:14px;font-family:inherit">
+            </div>
+            <div>
+              <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted-2);margin-bottom:4px">On-ground Support</label>
+              <input type="text" id="settingsSupport" placeholder="24/7" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:9px;font-size:14px;font-family:inherit">
+            </div>
+            <div>
+              <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted-2);margin-bottom:4px">Instagram Followers</label>
+              <input type="text" id="settingsIgFollowers" placeholder="1.2k+" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:9px;font-size:14px;font-family:inherit">
+            </div>
+          </div>
           <button class="save-trips-btn" id="saveSettingsBtn" style="margin-top:18px">Save Changes</button>
           <span class="trips-save-msg" id="settingsSaveMsg"></span>
         </div>
@@ -636,12 +662,12 @@ async function saveTrips() {
   const trips = { upcoming: [], previous: [] };
   document.querySelectorAll('#upcomingGrid .trip-edit-card').forEach(card => {
     const t = {};
-    card.querySelectorAll('input').forEach(inp => { t[inp.dataset.key] = inp.value; });
+    card.querySelectorAll('input[data-key]').forEach(inp => { t[inp.dataset.key] = inp.value; });
     trips.upcoming.push(t);
   });
   document.querySelectorAll('#previousGrid .trip-edit-card').forEach(card => {
     const t = {};
-    card.querySelectorAll('input').forEach(inp => { t[inp.dataset.key] = inp.value; });
+    card.querySelectorAll('input[data-key]').forEach(inp => { t[inp.dataset.key] = inp.value; });
     trips.previous.push(t);
   });
 
@@ -677,6 +703,11 @@ async function loadSiteSettings() {
     document.getElementById('settingsPhone').value = s.phone || '';
     document.getElementById('settingsEmail').value = s.email || '';
     document.getElementById('settingsAddress').value = s.address || '';
+    document.getElementById('settingsTravellers').value = s.travellers || '';
+    document.getElementById('settingsDestinations').value = s.destinations || '';
+    document.getElementById('settingsRating').value = s.rating || '';
+    document.getElementById('settingsSupport').value = s.support || '';
+    document.getElementById('settingsIgFollowers').value = s.igFollowers || '';
     document.getElementById('currentLogoPreview').src = '/images/photos/logo.png?t=' + Date.now();
   } catch (e) { /* ignore */ }
 }
@@ -726,6 +757,11 @@ document.getElementById('saveSettingsBtn').addEventListener('click', async () =>
         phone: document.getElementById('settingsPhone').value,
         contactEmail: document.getElementById('settingsEmail').value,
         address: document.getElementById('settingsAddress').value,
+        travellers: document.getElementById('settingsTravellers').value,
+        destinations: document.getElementById('settingsDestinations').value,
+        rating: document.getElementById('settingsRating').value,
+        support: document.getElementById('settingsSupport').value,
+        igFollowers: document.getElementById('settingsIgFollowers').value,
       }),
     });
     const data = await res.json();

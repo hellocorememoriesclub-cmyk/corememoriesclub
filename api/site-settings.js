@@ -11,6 +11,11 @@ const DEFAULTS = {
   phone: '+91 88265 26252',
   email: 'hello@corememoriesclub.com',
   address: 'Mumbai, India',
+  travellers: '1,000+',
+  destinations: '30+',
+  rating: '4.8',
+  support: '24/7',
+  igFollowers: '1.2k+',
 };
 
 function ghHeaders() {
@@ -71,6 +76,11 @@ module.exports = async (req, res) => {
       if (typeof body.phone === 'string') updated.phone = body.phone.trim();
       if (typeof body.contactEmail === 'string') updated.email = body.contactEmail.trim();
       if (typeof body.address === 'string') updated.address = body.address.trim();
+      if (typeof body.travellers === 'string') updated.travellers = body.travellers.trim();
+      if (typeof body.destinations === 'string') updated.destinations = body.destinations.trim();
+      if (typeof body.rating === 'string') updated.rating = body.rating.trim();
+      if (typeof body.support === 'string') updated.support = body.support.trim();
+      if (typeof body.igFollowers === 'string') updated.igFollowers = body.igFollowers.trim();
       await ghPutFile(SETTINGS_PATH, JSON.stringify(updated, null, 2) + '\n', 'Update site settings via admin panel', sha, false);
       res.status(200).json({ ok: true, settings: updated });
       return;

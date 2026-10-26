@@ -35,7 +35,7 @@ function attachTripDocLinks() {
 
 // Applies admin-edited phone/email/address everywhere those are marked up on the page.
 function applySiteSettings() {
-  const hasTargets = document.querySelector('.site-tel, .site-mail, .site-tel-text, .site-mail-text, .site-tel-href, .site-wa-href, .site-address-text');
+  const hasTargets = document.querySelector('.site-tel, .site-mail, .site-tel-text, .site-mail-text, .site-tel-href, .site-wa-href, .site-address-text, .stat-travellers, .stat-destinations, .stat-rating-star, .stat-rating-outof5, .stat-support, .stat-ig-followers');
   if (!hasTargets) return;
   fetch('/api/site-settings')
     .then(res => res.json())
@@ -54,6 +54,12 @@ function applySiteSettings() {
       });
       document.querySelectorAll('.site-mail-text').forEach(el => { el.textContent = `✉️ ${s.email}`; });
       document.querySelectorAll('.site-address-text').forEach(el => { el.textContent = `📍 ${s.address}`; });
+      document.querySelectorAll('.stat-travellers').forEach(el => { el.textContent = s.travellers; });
+      document.querySelectorAll('.stat-destinations').forEach(el => { el.textContent = s.destinations; });
+      document.querySelectorAll('.stat-rating-star').forEach(el => { el.textContent = `${s.rating}★`; });
+      document.querySelectorAll('.stat-rating-outof5').forEach(el => { el.textContent = `${s.rating}/5.0`; });
+      document.querySelectorAll('.stat-support').forEach(el => { el.textContent = s.support; });
+      document.querySelectorAll('.stat-ig-followers').forEach(el => { el.textContent = s.igFollowers; });
     })
     .catch(() => {});
 }
