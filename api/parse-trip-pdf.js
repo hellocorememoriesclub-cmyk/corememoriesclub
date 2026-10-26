@@ -18,13 +18,21 @@ module.exports = async (req, res) => {
     if (req.method !== 'POST') { res.status(405).json({ ok: false, error: 'Method not allowed' }); return; }
     const body = req.body || {};
     if (!checkAuth(body)) { res.status(401).json({ ok: false, error: 'Unauthorized' }); return; }
-    if (!body.data) { res.status(400).json({ ok: false, error: 'Missing PDF data' }); return; }
+    if (!body.data && !body.pdfUrl) { res.status(400).json({ ok: false, error: 'Missing PDF data or pdfUrl' }); return; }
     if (!process.env.ANTHROPIC_API_KEY) {
       res.status(500).json({ ok: false, error: 'AI parsing is not configured yet (missing ANTHROPIC_API_KEY).' });
       return;
     }
 
-    const base64 = String(body.data).split(',').pop();
+    let base64;
+    if (body.pdfUrl) {
+      const pdfRes = await fetch(body.pdfUrl);
+      if (!pdfRes.ok) { res.status(400).json({ ok: false, error: 'Could not fetch the uploaded PDF' }); return; }
+      const arrayBuffer = await pdfRes.arrayBuffer();
+      base64 = Buffer.from(arrayBuffer).toString('base64');
+    } else {
+      base64 = String(body.data).split(',').pop();
+    }
 
     const aiRes = await fetch(ANTHROPIC_API, {
       method: 'POST',

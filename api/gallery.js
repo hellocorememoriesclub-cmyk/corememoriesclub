@@ -107,6 +107,24 @@ module.exports = async (req, res) => {
       return;
     }
 
+    if (req.method === 'POST' && req.query.action === 'record-blob') {
+      const body = req.body || {};
+      if (!checkAuth(body)) { res.status(401).json({ ok: false, error: 'Unauthorized' }); return; }
+      if (!body.tripTitle || !body.blobUrl) {
+        res.status(400).json({ ok: false, error: 'Missing tripTitle or blobUrl' });
+        return;
+      }
+      const slug = slugify(body.tripTitle);
+      const { data: indexData, sha: indexSha } = await ghGetJson(INDEX_PATH);
+      const galleryData = indexData || {};
+      if (!galleryData[slug]) galleryData[slug] = { title: body.tripTitle, photos: [] };
+      galleryData[slug].title = body.tripTitle;
+      galleryData[slug].photos.unshift(body.blobUrl);
+      await ghPutFile(INDEX_PATH, JSON.stringify(galleryData, null, 2) + '\n', `Add photo to ${body.tripTitle} gallery`, indexSha, false);
+      res.status(200).json({ ok: true, slug, path: body.blobUrl });
+      return;
+    }
+
     if (req.method === 'POST' && req.query.action === 'upload-from-drive') {
       const body = req.body || {};
       if (!checkAuth(body)) { res.status(401).json({ ok: false, error: 'Unauthorized' }); return; }

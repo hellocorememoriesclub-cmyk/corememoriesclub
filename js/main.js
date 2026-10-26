@@ -4,6 +4,10 @@ function slugify(s) {
   return String(s || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'trip';
 }
 
+function mediaUrl(p) {
+  return /^https?:\/\//i.test(p || '') ? p : '/' + p;
+}
+
 // Adds a small "Itinerary PDF" link into any .pkg-card whose title has an uploaded trip document.
 function attachTripDocLinks() {
   const cards = document.querySelectorAll('.pkg-card h3');
@@ -21,7 +25,7 @@ function attachTripDocLinks() {
         const body = h3.closest('.pkg-body');
         if (!body || body.querySelector('.pkg-doc-link')) return;
         const link = document.createElement('a');
-        link.href = '/' + doc.path;
+        link.href = mediaUrl(doc.path);
         link.target = '_blank';
         link.rel = 'noopener';
         link.className = 'pkg-doc-link';
@@ -243,7 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <div style="margin-bottom:28px" id="trip-${slugify(t.title)}">
             <h3 style="font-size:17px;font-weight:600;margin-bottom:12px">${t.title}</h3>
             <div class="gallery-grid">
-              ${t.photos.map(p => `<div class="gitem"><img src="/${p}" alt="${t.title}"></div>`).join('')}
+              ${t.photos.map(p => `<div class="gitem"><img src="${mediaUrl(p)}" alt="${t.title}"></div>`).join('')}
             </div>
           </div>`).join('');
         if (location.hash) document.querySelector(location.hash)?.scrollIntoView({ behavior: 'smooth', block: 'start' });

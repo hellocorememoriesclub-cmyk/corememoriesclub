@@ -3,3 +3,4 @@ __pycache__/
 *.pyc
 bookings.db
 .DS_Store
+node_modules/

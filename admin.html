@@ -281,6 +281,25 @@ function slugify(s) {
 function token() { return tokenInput.value.trim(); }
 function adminEmail() { return emailInput.value.trim(); }
 function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function mediaUrl(p) { return /^https?:\/\//i.test(p || '') ? p : '/' + p; }
+
+let _blobClientUploadFn = null;
+async function blobUploadFn() {
+  if (!_blobClientUploadFn) {
+    const mod = await import('https://esm.sh/@vercel/blob@0.27.1/client');
+    _blobClientUploadFn = mod.upload;
+  }
+  return _blobClientUploadFn;
+}
+async function uploadToBlob(file, extraPayload) {
+  const upload = await blobUploadFn();
+  const blob = await upload(file.name, file, {
+    access: 'public',
+    handleUploadUrl: '/api/blob-upload',
+    clientPayload: JSON.stringify({ email: adminEmail(), token: token(), ...extraPayload }),
+  });
+  return blob;
+}
 
 document.querySelectorAll('.nav-item[data-view]').forEach(item => {
   item.addEventListener('click', () => {
@@ -394,9 +413,9 @@ function renderExistingPhotos() {
   if (!photos.length) { grid.innerHTML = '<div class="empty-state">No photos uploaded for this trip yet.</div>'; return; }
   grid.innerHTML = photos.map(p => `
     <div class="upload-card">
-      <img src="/${p}">
+      <img src="${escapeHtml(mediaUrl(p))}">
       <div class="uc-body">
-        <button type="button" onclick="deleteGalleryPhoto('${slug}','${p}')" style="color:#e0453f;font-size:12px;font-weight:700">Delete</button>
+        <button type="button" onclick="deleteGalleryPhoto('${escapeHtml(slug)}','${escapeHtml(p)}')" style="color:#e0453f;font-size:12px;font-weight:700">Delete</button>
       </div>
     </div>`).join('');
 }
@@ -426,15 +445,6 @@ function handleFiles(fileList) {
   [...fileList].forEach(f => uploadFile(f, tripTitle));
 }
 
-function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
 async function uploadFile(file, tripTitle) {
   const card = document.createElement('div');
   card.className = 'upload-card';
@@ -442,11 +452,11 @@ async function uploadFile(file, tripTitle) {
   card.innerHTML = `<img src="${previewUrl}"><div class="uc-body"><div style="font-size:11px;color:var(--text-muted-2)">Uploading...</div></div>`;
   uploadResults.prepend(card);
 
-  const b64 = await fileToBase64(file);
   try {
-    const res = await fetch('/api/gallery?action=upload', {
+    const blob = await uploadToBlob(file, { tripTitle });
+    const res = await fetch('/api/gallery?action=record-blob', {
       method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ email: adminEmail(), token: token(), tripTitle, filename: file.name, data: b64 }),
+      body: JSON.stringify({ email: adminEmail(), token: token(), tripTitle, blobUrl: blob.url }),
     });
     const data = await res.json();
     if (!res.ok || !data.ok) {
@@ -458,7 +468,7 @@ async function uploadFile(file, tripTitle) {
     galleryData[data.slug].photos.unshift(data.path);
     if (slugify(tripTitle) === slugify(currentTripTitle())) renderExistingPhotos();
   } catch (e) {
-    card.querySelector('.uc-body').innerHTML = '<div style="color:#e0453f;font-size:12px">Network error</div>';
+    card.querySelector('.uc-body').innerHTML = `<div style="color:#e0453f;font-size:12px">${escapeHtml(String(e.message || e))}</div>`;
   }
 }
 
@@ -512,7 +522,7 @@ function previousFieldDef() {
 function renderTripPhotoThumbs(photos) {
   return (photos || []).map(p => `
     <div class="trip-photo-thumb" data-path="${escapeHtml(p)}">
-      <img src="/${escapeHtml(p)}">
+      <img src="${escapeHtml(mediaUrl(p))}">
       <button type="button" class="trip-photo-del" title="Delete photo">&times;</button>
     </div>`).join('');
 }
@@ -521,7 +531,7 @@ function renderTripDocList(docs) {
   if (!docs || !docs.length) return '<div class="trip-doc-empty">No documents yet.</div>';
   return docs.map(d => `
     <div class="trip-doc-row" data-path="${escapeHtml(d.path)}">
-      <a href="/${escapeHtml(d.path)}" target="_blank" rel="noopener">📄 ${escapeHtml(d.name)}</a>
+      <a href="${escapeHtml(mediaUrl(d.path))}" target="_blank" rel="noopener">📄 ${escapeHtml(d.name)}</a>
       <button type="button" class="trip-doc-del" title="Delete document">&times;</button>
     </div>`).join('');
 }
@@ -561,23 +571,18 @@ async function uploadTripCardPhoto(card, file) {
   const titleInput = card.querySelector('input[data-key="title"]');
   const tripTitle = titleInput ? titleInput.value.trim() : '';
   if (!tripTitle) { alert('Enter a trip title first.'); return; }
-  const b64 = await new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
   try {
-    const res = await fetch('/api/gallery?action=upload', {
+    const blob = await uploadToBlob(file, { tripTitle });
+    const res = await fetch('/api/gallery?action=record-blob', {
       method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ email: adminEmail(), token: token(), tripTitle, filename: file.name, data: b64 }),
+      body: JSON.stringify({ email: adminEmail(), token: token(), tripTitle, blobUrl: blob.url }),
     });
     const data = await res.json();
     if (!res.ok || !data.ok) { alert(data.error || 'Upload failed'); return; }
     const thumbs = card.querySelector('.trip-photo-thumbs');
     thumbs.insertAdjacentHTML('afterbegin', renderTripPhotoThumbs([data.path]));
   } catch (e) {
-    alert('Network error while uploading photo');
+    alert('Upload failed: ' + (e.message || e));
   }
 }
 
@@ -601,19 +606,23 @@ async function deleteTripCardPhoto(card, thumbEl) {
 
 async function uploadTripCardDoc(card, file) {
   if (!/\.pdf$/i.test(file.name)) { alert('Only PDF files are supported.'); return; }
-  const b64 = await new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
 
   const statusEl = card.querySelector('.trip-doc-ai-status');
-  if (statusEl) { statusEl.style.display = 'block'; statusEl.textContent = '🪄 Reading PDF with AI, filling trip details...'; }
+  if (statusEl) { statusEl.style.display = 'block'; statusEl.textContent = '⬆️ Uploading PDF...'; }
+
+  let blob;
+  try {
+    blob = await uploadToBlob(file, { purpose: 'trip-doc' });
+  } catch (e) {
+    if (statusEl) { statusEl.style.color = '#e0453f'; statusEl.textContent = 'Upload failed: ' + (e.message || e); }
+    return;
+  }
+
+  if (statusEl) { statusEl.textContent = '🪄 Reading PDF with AI, filling trip details...'; }
   try {
     const aiRes = await fetch('/api/parse-trip-pdf', {
       method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ email: adminEmail(), token: token(), data: b64 }),
+      body: JSON.stringify({ email: adminEmail(), token: token(), pdfUrl: blob.url }),
     });
     const aiData = await aiRes.json();
     if (aiData.ok && aiData.fields) {
@@ -638,9 +647,9 @@ async function uploadTripCardDoc(card, file) {
   if (!tripTitle) { alert('Could not determine a trip title — type one in manually, then re-upload the PDF.'); return; }
 
   try {
-    const res = await fetch('/api/trip-docs?action=upload', {
+    const res = await fetch('/api/trip-docs?action=record-blob', {
       method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ email: adminEmail(), token: token(), tripTitle, filename: file.name, data: b64 }),
+      body: JSON.stringify({ email: adminEmail(), token: token(), tripTitle, filename: file.name, blobUrl: blob.url }),
     });
     const data = await res.json();
     if (!res.ok || !data.ok) { alert(data.error || 'Upload failed'); return; }

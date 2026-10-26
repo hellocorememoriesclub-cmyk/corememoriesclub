@@ -84,6 +84,29 @@ module.exports = async (req, res) => {
       return;
     }
 
+    if (req.method === 'POST' && req.query.action === 'record-blob') {
+      const body = req.body || {};
+      if (!checkAuth(body)) { res.status(401).json({ ok: false, error: 'Unauthorized' }); return; }
+      if (!body.tripTitle || !body.blobUrl || !body.filename) {
+        res.status(400).json({ ok: false, error: 'Missing tripTitle, blobUrl or filename' });
+        return;
+      }
+      if (!/\.pdf$/i.test(body.filename)) {
+        res.status(400).json({ ok: false, error: 'Only PDF files are supported' });
+        return;
+      }
+      const slug = slugify(body.tripTitle);
+      const safeName = String(body.filename).replace(/[^a-zA-Z0-9._-]/g, '_');
+      const { data: indexData, sha: indexSha } = await ghGetJson(INDEX_PATH);
+      const docsData = indexData || {};
+      if (!docsData[slug]) docsData[slug] = { title: body.tripTitle, docs: [] };
+      docsData[slug].title = body.tripTitle;
+      docsData[slug].docs.unshift({ name: safeName, path: body.blobUrl });
+      await ghPutFile(INDEX_PATH, JSON.stringify(docsData, null, 2) + '\n', `Add document to ${body.tripTitle}`, indexSha, false);
+      res.status(200).json({ ok: true, slug, path: body.blobUrl, name: safeName });
+      return;
+    }
+
     if (req.method === 'POST' && req.query.action === 'delete') {
       const body = req.body || {};
       if (!checkAuth(body)) { res.status(401).json({ ok: false, error: 'Unauthorized' }); return; }
