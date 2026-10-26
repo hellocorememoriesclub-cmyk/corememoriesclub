@@ -659,6 +659,26 @@ async function uploadTripCardDoc(card, file) {
     list.insertAdjacentHTML('afterbegin', renderTripDocList([{ name: data.name, path: data.path }]));
   } catch (e) {
     alert('Network error while uploading document');
+    return;
+  }
+
+  if (statusEl) { statusEl.style.color = 'var(--text-muted-2)'; statusEl.textContent = '🖼️ Pulling photos out of the PDF...'; }
+  try {
+    const picRes = await fetch('/api/extract-pdf-images', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ email: adminEmail(), token: token(), tripTitle, pdfUrl: blob.url }),
+    });
+    const picData = await picRes.json();
+    if (picRes.ok && picData.ok && picData.count > 0) {
+      const thumbs = card.querySelector('.trip-photo-thumbs');
+      thumbs.insertAdjacentHTML('afterbegin', renderTripPhotoThumbs(picData.photos));
+      if (statusEl) { statusEl.style.color = '#15803d'; statusEl.textContent = `✓ Filled from PDF + ${picData.count} photo(s) pulled in — review before saving.`; }
+    } else if (statusEl) {
+      statusEl.style.color = '#15803d';
+      statusEl.textContent = '✓ Filled from PDF — review before saving. (No usable photos found in the PDF.)';
+    }
+  } catch (e) {
+    if (statusEl) { statusEl.style.color = '#15803d'; statusEl.textContent = '✓ Filled from PDF — review before saving. (Photo extraction failed.)'; }
   }
 }
 
