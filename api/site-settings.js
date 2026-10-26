@@ -16,6 +16,9 @@ const DEFAULTS = {
   rating: '4.8',
   support: '24/7',
   igFollowers: '1.2k+',
+  tripsRun: '50+',
+  founderName: 'Chitranshu',
+  cofounderName: 'Dheeraj',
 };
 
 function ghHeaders() {
@@ -81,6 +84,9 @@ module.exports = async (req, res) => {
       if (typeof body.rating === 'string') updated.rating = body.rating.trim();
       if (typeof body.support === 'string') updated.support = body.support.trim();
       if (typeof body.igFollowers === 'string') updated.igFollowers = body.igFollowers.trim();
+      if (typeof body.tripsRun === 'string') updated.tripsRun = body.tripsRun.trim();
+      if (typeof body.founderName === 'string') updated.founderName = body.founderName.trim();
+      if (typeof body.cofounderName === 'string') updated.cofounderName = body.cofounderName.trim();
       await ghPutFile(SETTINGS_PATH, JSON.stringify(updated, null, 2) + '\n', 'Update site settings via admin panel', sha, false);
       res.status(200).json({ ok: true, settings: updated });
       return;

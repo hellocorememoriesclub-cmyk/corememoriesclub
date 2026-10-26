@@ -47,6 +47,33 @@ async function ghPutFile(filePath, base64Content, message, sha, isBase64Already)
   return res.json();
 }
 
+function extractDriveFileId(url) {
+  const patterns = [
+    /\/file\/d\/([a-zA-Z0-9_-]{10,})/,
+    /[?&]id=([a-zA-Z0-9_-]{10,})/,
+    /\/d\/([a-zA-Z0-9_-]{10,})/,
+  ];
+  for (const re of patterns) {
+    const m = String(url || '').match(re);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+async function recordPhoto(tripTitle, filename, base64, indexPath, ghGetJson, ghPutFile, folder) {
+  const slug = slugify(tripTitle);
+  const safeName = String(filename).replace(/[^a-zA-Z0-9._-]/g, '_');
+  const imagePath = `${folder}/${slug}/${Date.now()}-${safeName}`;
+  await ghPutFile(imagePath, base64, `Upload photo for ${tripTitle}`, null, true);
+  const { data: indexData, sha: indexSha } = await ghGetJson(indexPath);
+  const galleryData = indexData || {};
+  if (!galleryData[slug]) galleryData[slug] = { title: tripTitle, photos: [] };
+  galleryData[slug].title = tripTitle;
+  galleryData[slug].photos.unshift(imagePath);
+  await ghPutFile(indexPath, JSON.stringify(galleryData, null, 2) + '\n', `Add photo to ${tripTitle} gallery`, indexSha, false);
+  return { slug, path: imagePath };
+}
+
 module.exports = async (req, res) => {
   try {
     if (req.method === 'GET') {
@@ -77,6 +104,37 @@ module.exports = async (req, res) => {
       await ghPutFile(INDEX_PATH, JSON.stringify(galleryData, null, 2) + '\n', `Add photo to ${body.tripTitle} gallery`, indexSha, false);
 
       res.status(200).json({ ok: true, slug, path: imagePath });
+      return;
+    }
+
+    if (req.method === 'POST' && req.query.action === 'upload-from-drive') {
+      const body = req.body || {};
+      if (!checkAuth(body)) { res.status(401).json({ ok: false, error: 'Unauthorized' }); return; }
+      if (!body.tripTitle || !body.driveUrl) {
+        res.status(400).json({ ok: false, error: 'Missing tripTitle or driveUrl' });
+        return;
+      }
+      const fileId = extractDriveFileId(body.driveUrl);
+      if (!fileId) {
+        res.status(400).json({ ok: false, error: 'Could not find a file ID in that Google Drive link' });
+        return;
+      }
+      const driveRes = await fetch(`https://drive.google.com/uc?export=download&id=${fileId}`, { redirect: 'follow' });
+      if (!driveRes.ok) {
+        res.status(400).json({ ok: false, error: `Could not fetch that Drive file (${driveRes.status}). Make sure sharing is set to "Anyone with the link".` });
+        return;
+      }
+      const contentType = driveRes.headers.get('content-type') || '';
+      if (!contentType.startsWith('image/')) {
+        res.status(400).json({ ok: false, error: 'That Drive link is not a direct image — check sharing settings or the file type.' });
+        return;
+      }
+      const ext = contentType.split('/')[1]?.split(';')[0] || 'jpg';
+      const arrayBuffer = await driveRes.arrayBuffer();
+      const base64 = Buffer.from(arrayBuffer).toString('base64');
+
+      const result = await recordPhoto(body.tripTitle, `drive-${fileId}.${ext}`, base64, INDEX_PATH, ghGetJson, ghPutFile, 'images/photos/gallery');
+      res.status(200).json({ ok: true, ...result });
       return;
     }
 

@@ -35,7 +35,7 @@ function attachTripDocLinks() {
 
 // Applies admin-edited phone/email/address everywhere those are marked up on the page.
 function applySiteSettings() {
-  const hasTargets = document.querySelector('.site-tel, .site-mail, .site-tel-text, .site-mail-text, .site-tel-href, .site-wa-href, .site-address-text, .stat-travellers, .stat-destinations, .stat-rating-star, .stat-rating-outof5, .stat-support, .stat-ig-followers');
+  const hasTargets = document.querySelector('.site-tel, .site-mail, .site-tel-text, .site-mail-text, .site-tel-href, .site-wa-href, .site-address-text, .stat-travellers, .stat-destinations, .stat-rating-star, .stat-rating-outof5, .stat-support, .stat-ig-followers, .stat-trips-run, .stat-founder-name, .stat-cofounder-name, .stat-founder-initial, .stat-cofounder-initial');
   if (!hasTargets) return;
   fetch('/api/site-settings')
     .then(res => res.json())
@@ -60,6 +60,11 @@ function applySiteSettings() {
       document.querySelectorAll('.stat-rating-outof5').forEach(el => { el.textContent = `${s.rating}/5.0`; });
       document.querySelectorAll('.stat-support').forEach(el => { el.textContent = s.support; });
       document.querySelectorAll('.stat-ig-followers').forEach(el => { el.textContent = s.igFollowers; });
+      document.querySelectorAll('.stat-trips-run').forEach(el => { el.textContent = s.tripsRun; });
+      document.querySelectorAll('.stat-founder-name').forEach(el => { el.textContent = s.founderName; });
+      document.querySelectorAll('.stat-cofounder-name').forEach(el => { el.textContent = s.cofounderName; });
+      document.querySelectorAll('.stat-founder-initial').forEach(el => { el.textContent = (s.founderName || '?').charAt(0).toUpperCase(); });
+      document.querySelectorAll('.stat-cofounder-initial').forEach(el => { el.textContent = (s.cofounderName || '?').charAt(0).toUpperCase(); });
     })
     .catch(() => {});
 }
