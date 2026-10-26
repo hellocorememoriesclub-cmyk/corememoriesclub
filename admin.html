@@ -479,7 +479,9 @@ function renderTripEditCard(trip, idx, group, fields, photos, docs) {
     </div>
     <div class="trip-docs-section">
       <label>Trip Documents (itinerary, brochure PDFs)</label>
+      <p style="font-size:11.5px;color:var(--text-muted-2);margin-bottom:8px">Upload a PDF and AI will try to fill in the title, dates, price and duration above.</p>
       <div class="trip-doc-list">${renderTripDocList(docs)}</div>
+      <div class="trip-doc-ai-status" style="display:none;font-size:12px;margin-bottom:8px"></div>
       <input type="file" class="trip-doc-input" accept="application/pdf" multiple style="display:none">
       <button type="button" class="trip-doc-upload-btn">+ Add PDF</button>
     </div>
@@ -537,9 +539,6 @@ async function deleteTripCardPhoto(card, thumbEl) {
 }
 
 async function uploadTripCardDoc(card, file) {
-  const titleInput = card.querySelector('input[data-key="title"]');
-  const tripTitle = titleInput ? titleInput.value.trim() : '';
-  if (!tripTitle) { alert('Enter a trip title first.'); return; }
   if (!/\.pdf$/i.test(file.name)) { alert('Only PDF files are supported.'); return; }
   const b64 = await new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -547,6 +546,36 @@ async function uploadTripCardDoc(card, file) {
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
+
+  const statusEl = card.querySelector('.trip-doc-ai-status');
+  if (statusEl) { statusEl.style.display = 'block'; statusEl.textContent = '🪄 Reading PDF with AI, filling trip details...'; }
+  try {
+    const aiRes = await fetch('/api/parse-trip-pdf', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ email: adminEmail(), token: token(), data: b64 }),
+    });
+    const aiData = await aiRes.json();
+    if (aiData.ok && aiData.fields) {
+      const f = aiData.fields;
+      const fieldMap = { title: f.title, days: f.days, dates: f.dates, price: f.price };
+      Object.entries(fieldMap).forEach(([key, val]) => {
+        if (!val) return;
+        const input = card.querySelector(`input[data-key="${key}"]`);
+        if (input && !input.value.trim()) input.value = val;
+      });
+      if (statusEl) { statusEl.style.color = '#15803d'; statusEl.textContent = '✓ Filled from PDF — review before saving.'; }
+    } else if (statusEl) {
+      statusEl.style.color = '#e0453f';
+      statusEl.textContent = aiData.error || 'Could not auto-fill from PDF.';
+    }
+  } catch (e) {
+    if (statusEl) { statusEl.style.color = '#e0453f'; statusEl.textContent = 'Network error while reading PDF.'; }
+  }
+
+  const titleInput = card.querySelector('input[data-key="title"]');
+  const tripTitle = titleInput ? titleInput.value.trim() : '';
+  if (!tripTitle) { alert('Could not determine a trip title — type one in manually, then re-upload the PDF.'); return; }
+
   try {
     const res = await fetch('/api/trip-docs?action=upload', {
       method: 'POST', headers: {'Content-Type':'application/json'},
