@@ -1,6 +1,3 @@
-const menu=document.querySelector('#menu');
-const nav=document.querySelector('#nav');
-menu.addEventListener('click',()=>{const open=menu.getAttribute('aria-expanded')!=='true';menu.setAttribute('aria-expanded',String(open));nav.classList.toggle('open',open)});
 const form=document.querySelector('#trip-booking-form');
 const detailsStep=document.querySelector('#details-step');
 const paymentStep=document.querySelector('#payment-step');
