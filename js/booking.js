@@ -58,7 +58,7 @@ form.addEventListener('submit',event=>{
  event.preventDefault();
  if(!validateFields())return;
  const data=Object.fromEntries(new FormData(form).entries());
- const labels={name:'Name',phone:'Phone',email:'Email',destination:'Trip',group_size:'Group size',travel_date:'Travel date',message:'Notes'};
+ const labels={name:'Name',phone:'Phone',email:'Email',destination:'Trip',group_size:'Group size',message:'Notes'};
  summary.replaceChildren();
  for(const [key,label] of Object.entries(labels)){
   if(!data[key])continue;
