@@ -6,7 +6,7 @@ document.querySelectorAll('.trip-gallery').forEach(gallery=>{
  let current=0;
  function showPhoto(index){
   current=(index+slides.length)%slides.length;
-  slides.forEach((slide,i)=>{slide.hidden=i!==current});
+  slides.forEach((slide,i)=>{slide.hidden=i!==current;if(i===current){slide.querySelectorAll("img[data-src]").forEach(img=>{img.src=img.dataset.src;img.removeAttribute("data-src")})}});
   thumbs.forEach((thumb,i)=>{if(i===current){thumb.setAttribute('aria-current','true')}else{thumb.removeAttribute('aria-current')}});
   counter.textContent=String(current+1);
  }
