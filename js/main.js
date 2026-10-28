@@ -378,7 +378,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (!res.ok || !data.ok) {
-          showMsg("Something went wrong on our end — please call us directly at +91 88265 26252.", true);
+          showMsg("Something went wrong on our end — please call us directly at +91 99285 45123.", true);
           return;
         }
 
@@ -399,7 +399,7 @@ document.addEventListener('DOMContentLoaded', () => {
 async function initChatWidget() {
   if (document.body.dataset.noChatWidget !== undefined) return;
 
-  let waNumber = '918826526252';
+  let waNumber = '919928545123';
   try {
     const settings = await fetch('/api/site-settings').then(r => r.json());
     if (settings.phone) waNumber = settings.phone.replace(/[^0-9]/g, '');

@@ -65,7 +65,7 @@ form.addEventListener('submit',event=>{
   row.append(term,value);summary.append(row);
  }
  const enquiry='Hi Core Memories Club! I would like to enquire about a trip.\n\n'+Object.entries(labels).filter(([key])=>data[key]).map(([key,label])=>label+': '+data[key]).join('\n')+'\n\nPlease confirm availability, the final quote and payment amount.';
- document.querySelector('#send-enquiry').href='https://wa.me/918826526252?text='+encodeURIComponent(enquiry);
+ document.querySelector('#send-enquiry').href='https://wa.me/919928545123?text='+encodeURIComponent(enquiry);
  detailsStep.hidden=true;
  paymentStep.hidden=false;
  document.querySelector('#payment-title').focus();

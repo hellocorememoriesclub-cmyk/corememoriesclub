@@ -8,7 +8,7 @@ const SETTINGS_PATH = 'data/site-settings.json';
 const LOGO_PATH = 'images/photos/logo.png';
 
 const DEFAULTS = {
-  phone: '+91 88265 26252',
+  phone: '+91 99285 45123',
   email: 'hello@corememoriesclub.com',
   address: 'Mumbai, India',
   travellers: '1,000+',
