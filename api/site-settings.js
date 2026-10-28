@@ -9,7 +9,7 @@ const LOGO_PATH = 'images/photos/logo.png';
 
 const DEFAULTS = {
   phone: '+91 99285 45123',
-  email: 'hello@corememoriesclub.com',
+  email: 'Sales@corememoriesclub.com',
   address: 'Mumbai, India',
   travellers: '1,000+',
   destinations: '30+',
