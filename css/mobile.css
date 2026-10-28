@@ -25,3 +25,8 @@ header,main,footer{min-width:0}.trip-info,.booking-card,.detail-body,.booking-bo
 @media(max-width:360px){header .brand{font-size:15px;gap:5px}header .brandmark{font-size:29px}header .club{letter-spacing:3px}header>.button.small{font-size:10px;padding:10px}header{gap:6px}.launch-card,.trip-info{padding:20px}.hero-note{font-size:11px}.hero-note .mini-star{font-size:28px}.price strong{font-size:24px}.launch-top{align-items:flex-start;flex-direction:column}}
 
 @media(max-width:760px){header .header-brand{width:96px;flex:0 0 96px;line-height:0}.footer-brand{width:96px;padding:6px 8px}header>.button.small{height:44px;min-height:44px;white-space:nowrap;flex-shrink:0}button{font-family:inherit}.filters button{color:var(--ink)}.filters button.active{color:var(--paper)}}
+
+/* Header contact shortcuts */
+.header-socials{display:flex;align-items:center;gap:4px;flex:none}.header-socials a{display:grid;place-items:center;width:44px;height:44px;border:1px solid var(--line);border-radius:50%;color:var(--ink);text-decoration:none}.header-socials a:hover{background:var(--ink);color:var(--paper)}.header-socials a:focus-visible{outline:2px solid currentColor;outline-offset:3px}.header-socials svg{display:block;flex:none}
+@media(max-width:1100px){header{position:relative;flex-wrap:wrap;height:auto;min-height:124px;padding-top:12px;padding-bottom:10px;row-gap:8px}header .header-socials{order:5;flex:0 0 100%;justify-content:center}header nav{margin-left:auto}}
+@media(max-width:760px){header{position:sticky;min-height:132px;row-gap:4px;padding-top:10px;padding-bottom:6px}header .header-socials{gap:14px}header nav{top:100%}html{scroll-padding-top:148px}}
