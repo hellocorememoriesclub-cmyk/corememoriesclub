@@ -12,3 +12,5 @@
 .passport-intro h1 em{color:#b9c891}.passport-scroll :focus-visible{outline-color:#dfc57b}.next-departure-strip:focus-visible{outline-color:#dfc57b;outline-offset:-5px}
 
 header nav a[aria-current="page"]{text-decoration:underline;text-underline-offset:7px;text-decoration-color:#78865c;text-decoration-thickness:2px}
+
+.featured-trip.without-photo{grid-template-columns:1fr}.featured-trip.without-photo .trip-info{max-width:900px}.roll-card:not(:has(img)){justify-content:center;min-height:260px}
