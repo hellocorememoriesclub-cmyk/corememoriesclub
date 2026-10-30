@@ -2,4 +2,7 @@ document.querySelectorAll('[data-filter]').forEach(button=>button.addEventListen
 
 const heroVideo=document.querySelector('#hero-video');const videoToggle=document.querySelector('.video-toggle');function syncVideoControl(){videoToggle.textContent=heroVideo.paused?'Play video ▷':'Pause video Ⅱ';videoToggle.setAttribute('aria-label',heroVideo.paused?'Play travel highlights video':'Pause travel highlights video')}if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){heroVideo.autoplay=false;heroVideo.pause()}heroVideo.addEventListener('play',syncVideoControl);heroVideo.addEventListener('pause',syncVideoControl);videoToggle.addEventListener('click',()=>{if(heroVideo.paused){heroVideo.play().catch(syncVideoControl)}else{heroVideo.pause()}});syncVideoControl();
 
-if(window.location.hash==='#past'){document.querySelector('[data-filter="past"]').click();document.querySelector('#trips').scrollIntoView()}
+function openLinkedTripPanel(){if(window.location.hash==='#past'){document.querySelector('[data-filter="past"]').click();document.querySelector('#trips').scrollIntoView()}}
+window.addEventListener('hashchange',openLinkedTripPanel);
+document.querySelectorAll('a[href="#past"],a[href="index.html#past"]').forEach(link=>link.addEventListener('click',()=>{document.querySelector('[data-filter="past"]').click();document.querySelector('#trips').scrollIntoView()}));
+openLinkedTripPanel();
