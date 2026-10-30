@@ -42,7 +42,7 @@ document.querySelectorAll('.roll-today time').forEach(el=>{el.textContent=new In
   const total=Math.max(0,Math.floor((Date.parse(trip.date)-now)/1000));
   const days=Math.floor(total/86400),hours=Math.floor(total%86400/3600),minutes=Math.floor(total%3600/60),seconds=total%60;
   clock.href=trip.url;clock.querySelector('[data-next-title]').textContent=trip.title;
-  const date=new Date(trip.date);clock.querySelector('[data-next-date]').textContent=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kolkata',year:'2-digit',month:'2-digit',day:'2-digit'}).format(date).split('/').reverse().join(' ');
+  const date=new Date(trip.date);clock.querySelector('[data-next-date]').textContent=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kolkata',year:'numeric',month:'short',day:'2-digit'}).format(date).toUpperCase();
   clock.querySelector('[data-next-clock]').textContent=days+'d '+String(hours).padStart(2,'0')+'h '+String(minutes).padStart(2,'0')+'m '+String(seconds).padStart(2,'0')+'s';
  }
  function start(){clearInterval(timer);tick();if(!document.hidden)timer=setInterval(tick,1000)}
